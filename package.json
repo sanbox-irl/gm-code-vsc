@@ -1,17 +1,40 @@
 {
-  "name": "gm-code-vsc",
-  "version": "0.1.0",
-  "description": "A simple manager for Gms2 files in Visual Studio Code.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Jonathan Spira <jjspira@gmail.com>",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/node": "^14.0.27",
-    "nodemon": "^2.0.4",
-    "ts-node": "^8.10.2",
-    "typescript": "^3.9.7"
-  }
+    "name": "gm-code-vsc",
+    "version": "0.1.0",
+    "displayName": "Gm Code",
+    "description": "A simple manager for Gms2 files in Visual Studio Code.",
+    "engines": {
+        "vscode": "^1.42.0"
+    },
+    "publisher": "jack",
+    "activationEvents": [
+        "onView:gmVfs"
+    ],
+    "contributes": {
+        "views": {
+            "explorer": [
+                {
+                    "id": "gmVfs",
+                    "name": "Gm Code"
+                }
+            ]
+        }
+    },
+    "main": "out/index.js",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "author": "Jonathan Spira <jjspira@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^14.0.27",
+        "nodemon": "^2.0.4",
+        "ts-node": "^8.10.2",
+        "typescript": "^3.9.7",
+        "@types/rimraf": "^2.0.2",
+        "@types/vscode": "^1.45.0",
+        "yy-boss-ts": "0.1.0"
+    }
 }

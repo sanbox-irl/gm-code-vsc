@@ -5,12 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+            "name": "Launch Extension",
+            "outFiles": ["${workspaceFolder}/out/**/*.js"],
+            "preLaunchTask": "build",
             "request": "launch",
-            "name": "Launch Program",
-            "runtimeArgs": ["-r", "ts-node/register"],
-            "args": ["${workspaceFolder}/src/index.ts"],
-            "console": "integratedTerminal",
+            "runtimeExecutable": "${execPath}",
+            "type": "pwa-extensionHost",
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": "std"
         }
     ]
 }
