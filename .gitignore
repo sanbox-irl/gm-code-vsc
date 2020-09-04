@@ -1,0 +1,22 @@
+*.log
+
+pids
+logs
+results
+tmp
+
+# Dependency directory
+node_modules
+bower_components
+
+# OS metadata
+.DS_Store
+
+# Ignore built ts files
+dist/**/*
+
+# Ignore the build
+build/
+
+# this is for us
+src/config.ts
