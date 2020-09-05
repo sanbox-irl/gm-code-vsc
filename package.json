@@ -35,6 +35,6 @@
         "typescript": "^3.9.7",
         "@types/rimraf": "^2.0.2",
         "@types/vscode": "^1.45.0",
-        "yy-boss-ts": "0.1.0"
+        "yy-boss-ts": "file:../yy-boss-ts"
     }
 }

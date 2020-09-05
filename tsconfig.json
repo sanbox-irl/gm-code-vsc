@@ -18,7 +18,8 @@
         "declaration": true,
         "declarationDir": "./out",
         "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */,
-        "sourceMap": true
+        "sourceMap": true,
+        "declarationMap": true
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "out"]

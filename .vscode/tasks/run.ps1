@@ -1,2 +1,2 @@
 npx tsc;
-node build/index.js
+node out/index.js
