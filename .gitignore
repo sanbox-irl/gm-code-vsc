@@ -21,3 +21,4 @@ out/**/*
 
 # Ignore our Config file...
 src/config.ts
+bin/
