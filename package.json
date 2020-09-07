@@ -18,6 +18,57 @@
                     "name": "Gm Code"
                 }
             ]
+        },
+        "commands": [
+            {
+                "command": "gmVfs.openScript",
+                "title": "Open"
+            },
+            {
+                "command": "gmVfs.createScript",
+                "title": "New Script",
+                "category": "Create Resource",
+                "enablement": "view == gmVfs && viewItem == folderItem"
+            },
+            {
+                "command": "gmVfs.createObject",
+                "title": "New Object",
+                "category": "Create Resource"
+            },
+            {
+                "command": "gmVfs.createFolder",
+                "title": "New Folder",
+                "category": "Create Folder"
+            },
+            {
+                "command": "gmVfs.deleteFolder",
+                "title": "Delete",
+                "category": "Delete"
+            }
+        ],
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "gmVfs.createScript",
+                    "when": "view == gmVfs && viewItem == folderItem",
+                    "group": "createResource"
+                },
+                {
+                    "command": "gmVfs.createObject",
+                    "when": "view == gmVfs && viewItem == folderItem",
+                    "group": "createResource"
+                },
+                {
+                    "command": "gmVfs.createFolder",
+                    "when": "view == gmVfs && viewItem == folderItem",
+                    "group": "folderOp"
+                },
+                {
+                    "command": "gmVfs.deleteFolder",
+                    "when": "view == gmVfs && viewItem == folderItem",
+                    "group": "zdelete"
+                }
+            ]
         }
     },
     "main": "out/index.js",
