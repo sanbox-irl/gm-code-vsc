@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { YyBoss, vfsCommands, ViewPath, resourceCommands, Resource } from 'yy-boss-ts';
+import { YyBoss, vfsCommands, ViewPath, resourceCommands, Resource, utilities } from 'yy-boss-ts';
 import * as path from 'path';
 import { YY_BOSS_EXE, WD } from './config';
 import { SerializedDataType, SerializedDataValue } from 'yy-boss-ts/out/core';
@@ -29,8 +29,10 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
 
                     let names = Object.getOwnPropertyNames(assoc_data);
 
+                    let better_names = await this.yyBoss.writeCommand(new utilities.PrettyEventNames(names));
+
                     let output: GmItem[] = [];
-                    for (const name of names) {
+                    for (const name of better_names.eventNames) {
                         output.push(
                             new GmItem(
                                 name + '.gml',
