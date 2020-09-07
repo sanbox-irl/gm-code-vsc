@@ -10,7 +10,10 @@
                 "command": "./.vscode/tasks/run.sh"
             },
             "label": "run",
-            "group": "build",
+            "group": {
+                "isDefault": true,
+                "kind": "build"
+            },
             "presentation": {
                 "echo": true,
                 "reveal": "always",
