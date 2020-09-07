@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { YyBoss, vfsCommands, ViewPath, resourceCommands, Resource, utilities } from 'yy-boss-ts';
 import * as path from 'path';
-import { YY_BOSS_EXE, WD } from './config';
+import { YY_BOSS_DIR, WD } from './config';
 import { SerializedDataType, SerializedDataValue } from 'yy-boss-ts/out/core';
 import { LogToFile } from 'yy-boss-ts/out/yy_boss';
 
@@ -159,7 +159,8 @@ async function main() {
     if (yyp_path !== undefined) {
         console.log(`...starting up with ${yyp_path}`);
 
-        const [status, yyp_boss] = await YyBoss.create(YY_BOSS_EXE, yyp_path, WD, new LogToFile('log.log'));
+        let yy_boss_path = await YyBoss.fetchYyBoss(YY_BOSS_DIR);
+        const [status, yyp_boss] = await YyBoss.create(yy_boss_path, yyp_path, WD, new LogToFile('log.log'));
 
         if (status.success) {
             console.log('successful parse');
