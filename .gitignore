@@ -16,3 +16,5 @@ bower_components
 dist/**/*
 out/**/*
 
+# Ignore Vsc settings...
+.vscode/
