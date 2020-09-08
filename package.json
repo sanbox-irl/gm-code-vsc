@@ -22,7 +22,11 @@
         "commands": [
             {
                 "command": "gmVfs.openScript",
-                "title": "Open"
+                "title": "Open Script"
+            },
+            {
+                "command": "gmVfs.openEvent",
+                "title": "Open Event"
             },
             {
                 "command": "gmVfs.createScript",

@@ -26,7 +26,7 @@ async function preboot() {
         console.log(`...starting up with ${yyp_path}`);
 
         // let yy_boss_path = await YyBoss.fetchYyBoss(YY_BOSS_DIR);
-        const yy_boss_path = path.join(YY_BOSS_DIR, 'yy-boss-cli_darwin');
+        const yy_boss_path = path.join(YY_BOSS_DIR, 'yy-boss-cli.exe');
         const [status, yyp_boss] = await YyBoss.create(yy_boss_path, yyp_path, WD, new LogToFile('log.log'));
 
         if (status.success) {
@@ -41,9 +41,11 @@ async function preboot() {
 }
 
 async function main(yyBoss: YyBoss) {
+    vfs.GmItem.YY_BOSS = yyBoss;
     vscode.window.registerTreeDataProvider('gmVfs', new vfs.GmItemProvider(yyBoss));
 
     vscode.commands.registerCommand('gmVfs.openScript', vfs.ResourceItem.onOpenScript);
+    vscode.commands.registerCommand('gmVfs.openEvent', vfs.EventItem.onOpenEvent);
 }
 
 preboot();
