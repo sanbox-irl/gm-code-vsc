@@ -1,14 +1,23 @@
-import { YyBoss, vfsCommands, ViewPath, resourceCommands, Resource, utilities } from 'yy-boss-ts';
+import {
+    YyBoss,
+    vfsCommands as vfsCommand,
+    ViewPath,
+    resourceCommands,
+    Resource,
+    utilities,
+    serializationCommands as serializationCommand,
+    vfsCommands,
+} from 'yy-boss-ts';
 import { SerializedDataValue } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
-import * as path from 'path';
+import { VfsCommandType } from 'yy-boss-ts/out/vfs';
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
-    constructor(private yyBoss: YyBoss) {}
+    constructor(public yyBoss: YyBoss) {}
 
     async getChildren(element?: GmItem | undefined): Promise<GmItem[]> {
         if (element === undefined) {
-            let result = await this.yyBoss.writeCommand(new vfsCommands.GetFullVfs());
+            let result = await this.yyBoss.writeCommand(new vfsCommand.GetFullVfs());
 
             return this.createChildrenOfFolder(result.flatFolderGraph);
         } else {
@@ -16,7 +25,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                 case GmItemType.Folder:
                     let folderElement = element as FolderItem;
                     let result = await this.yyBoss.writeCommand(
-                        new vfsCommands.GetFolderVfs(folderElement.viewPath)
+                        new vfsCommand.GetFolderVfs(folderElement.viewPath)
                     );
 
                     return this.createChildrenOfFolder(result.flatFolderGraph);
@@ -60,7 +69,17 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         return element;
     }
 
-    private createChildrenOfFolder(fg: vfsCommands.outputs.FlatFolderGraph): GmItem[] {
+    private _onDidChangeTreeData: vscode.EventEmitter<GmItem | undefined> = new vscode.EventEmitter<
+        GmItem | undefined
+    >();
+
+    readonly onDidChangeTreeData: vscode.Event<GmItem | undefined> = this._onDidChangeTreeData.event;
+
+    refresh(item?: GmItem | undefined): void {
+        this._onDidChangeTreeData.fire(item);
+    }
+
+    private createChildrenOfFolder(fg: vfsCommand.outputs.FlatFolderGraph): GmItem[] {
         const output: GmItem[] = [];
         for (const newFolder of fg.folders) {
             output.push(new FolderItem(newFolder.name, newFolder.path));
@@ -112,10 +131,33 @@ export abstract class GmItem extends vscode.TreeItem {
                 return new vscode.ThemeIcon('folder-opened');
         }
     }
-    public static YY_BOSS: YyBoss | undefined;
+
+    public static async onEditResource(gmItem: GmItem) {
+        switch (gmItem.gmItemType) {
+            case GmItemType.Event:
+                break;
+            case GmItemType.Folder:
+                // const folder = gmItem as FolderItem;
+                // const new_name = await vscode.window.showInputBox({
+                //     value: folder.label,
+                //     prompt: 'New Folder Name',
+                // });
+
+                // if (new_name !== undefined) {
+                //     const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+                //     yyBoss.writeCommand(new vfsCommand.EDIT_VFS?());
+                // }
+
+                break;
+            case GmItemType.Resource:
+                break;
+        }
+    }
+
+    public static ITEM_PROVIDER: GmItemProvider | undefined;
 }
 
-class FolderItem extends GmItem {
+export class FolderItem extends GmItem {
     public gmItemType = GmItemType.Folder;
     public contextValue = 'folderItem';
 
@@ -130,6 +172,73 @@ class FolderItem extends GmItem {
 
     get id(): string {
         return this.viewPath + this.label;
+    }
+
+    public static async onCreateFolder(folder: FolderItem) {
+        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+        const originalName = await vscode.window.showInputBox({
+            value: folder.label,
+            prompt: 'New Folder Name',
+            async validateInput(str: string): Promise<string | undefined> {
+                let newFolder = await yyBoss.writeCommand(
+                    new vfsCommand.CreateFolderVfs(folder.viewPath, str)
+                );
+
+                if (yyBoss.error === undefined) {
+                    await yyBoss.writeCommand(
+                        new vfsCommand.RemoveFolderVfs(newFolder.createdFolder.path, false)
+                    );
+
+                    return undefined;
+                } else {
+                    return `Cannot use that name: ${yyBoss.error.error}`;
+                }
+            },
+        });
+
+        if (originalName === undefined) {
+            return;
+        }
+
+        let name = originalName;
+        let i = 0;
+        let success = false;
+        while (true) {
+            await yyBoss.writeCommand(new vfsCommand.CreateFolderVfs(folder.viewPath, name));
+
+            if (yyBoss.error === undefined) {
+                success = true;
+                break;
+            } else {
+                i++;
+                name = `New Folder ${i}`;
+
+                if (i === 10) {
+                    break;
+                }
+            }
+        }
+
+        if (success) {
+            await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+            if (yyBoss.error === undefined) {
+                GmItem.ITEM_PROVIDER?.refresh(folder);
+            }
+        }
+    }
+
+    public static async onDeleteFolder(folder: FolderItem) {
+        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+        await yyBoss.writeCommand(new vfsCommand.RemoveFolderVfs(folder.viewPath, true));
+
+        if (yyBoss.error === undefined) {
+            await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+            if (yyBoss.error === undefined) {
+                GmItem.ITEM_PROVIDER?.refresh(undefined);
+            }
+        }
     }
 }
 
@@ -175,7 +284,7 @@ export class ResourceItem extends GmItem {
     }
 
     public static async onOpenScript(scriptName: string) {
-        const boss = ResourceItem.YY_BOSS as YyBoss;
+        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
         let path = await boss.writeCommand(new utilities.ScriptGmlPath(scriptName));
 
         let document = await vscode.workspace.openTextDocument(path.requestedPath);
@@ -209,7 +318,7 @@ export class EventItem extends GmItem {
     }
 
     public static async onOpenEvent(object_name: string, event_fname: string) {
-        const boss = ResourceItem.YY_BOSS as YyBoss;
+        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
         let path = await boss.writeCommand(new utilities.EventGmlPath(object_name, event_fname));
 
         let document = await vscode.workspace.openTextDocument(path.requestedPath);

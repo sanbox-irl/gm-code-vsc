@@ -41,11 +41,16 @@ async function preboot() {
 }
 
 async function main(yyBoss: YyBoss) {
-    vfs.GmItem.YY_BOSS = yyBoss;
-    vscode.window.registerTreeDataProvider('gmVfs', new vfs.GmItemProvider(yyBoss));
+    const item_provider = new vfs.GmItemProvider(yyBoss);
+    vfs.GmItem.ITEM_PROVIDER = item_provider;
+
+    vscode.window.registerTreeDataProvider('gmVfs', item_provider);
 
     vscode.commands.registerCommand('gmVfs.openScript', vfs.ResourceItem.onOpenScript);
     vscode.commands.registerCommand('gmVfs.openEvent', vfs.EventItem.onOpenEvent);
+    vscode.commands.registerCommand('gmVfs.createFolder', vfs.FolderItem.onCreateFolder);
+    vscode.commands.registerCommand('gmVfs.deleteFolder', vfs.FolderItem.onDeleteFolder);
+    vscode.commands.registerCommand('gmVfs.editResource', vfs.GmItem.onEditResource);
 }
 
 preboot();

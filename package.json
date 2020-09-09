@@ -31,8 +31,7 @@
             {
                 "command": "gmVfs.createScript",
                 "title": "New Script",
-                "category": "Create Resource",
-                "enablement": "view == gmVfs && viewItem == folderItem"
+                "category": "Create Resource"
             },
             {
                 "command": "gmVfs.createObject",
@@ -47,6 +46,11 @@
             {
                 "command": "gmVfs.deleteFolder",
                 "title": "Delete",
+                "category": "Delete"
+            },
+            {
+                "command": "gmVfs.editResource",
+                "title": "Rename",
                 "category": "Delete"
             }
         ],
@@ -71,6 +75,11 @@
                     "command": "gmVfs.deleteFolder",
                     "when": "view == gmVfs && viewItem == folderItem",
                     "group": "zdelete"
+                },
+                {
+                    "command": "gmVfs.editResource",
+                    "when": "view == gmVfs && viewItem == folderItem",
+                    "group": "zdelete"
                 }
             ]
         }
@@ -89,7 +98,9 @@
         "ts-node": "^8.10.2",
         "typescript": "^3.9.7",
         "@types/rimraf": "^2.0.2",
-        "@types/vscode": "^1.45.0",
+        "@types/vscode": "^1.45.0"
+    },
+    "dependencies": {
         "yy-boss-ts": "file:../yy-boss-ts"
     }
 }
