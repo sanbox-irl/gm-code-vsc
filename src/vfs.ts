@@ -11,6 +11,7 @@ import {
 import { SerializedDataValue } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
 import { VfsCommandType } from 'yy-boss-ts/out/vfs';
+import { YypBossError } from 'yy-boss-ts/out/error';
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     constructor(public yyBoss: YyBoss) {}
@@ -137,16 +138,28 @@ export abstract class GmItem extends vscode.TreeItem {
             case GmItemType.Event:
                 break;
             case GmItemType.Folder:
-                // const folder = gmItem as FolderItem;
-                // const new_name = await vscode.window.showInputBox({
-                //     value: folder.label,
-                //     prompt: 'New Folder Name',
-                // });
+                const folder = gmItem as FolderItem;
+                const new_name = await vscode.window.showInputBox({
+                    value: folder.label,
+                    prompt: 'New Folder Name',
+                });
 
-                // if (new_name !== undefined) {
-                //     const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-                //     yyBoss.writeCommand(new vfsCommand.EDIT_VFS?());
-                // }
+                if (new_name !== undefined) {
+                    const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+                    await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_name));
+
+                    if (yyBoss.hasError === false) {
+                        await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+
+                        if (yyBoss.hasError) {
+                            console.log(yyBoss.error?.error.type);
+                        } else {
+                            GmItem.ITEM_PROVIDER?.refresh(undefined);
+                        }
+                    } else {
+                        console.log(yyBoss.error?.error.type);
+                    }
+                }
 
                 break;
             case GmItemType.Resource:
@@ -192,12 +205,12 @@ export class FolderItem extends GmItem {
 
                     return undefined;
                 } else {
-                    return `Cannot use that name: ${yyBoss.error.error}`;
+                    return `Error:${YypBossError.error(yyBoss.error.error)}`;
                 }
             },
         });
 
-        if (originalName === undefined) {
+        if (originalName === undefined || originalName.length === 0) {
             return;
         }
 
