@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { YY_BOSS_DIR, WD } from './config';
+import { YY_BOSS_PATH, WD } from './config';
 import { LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
 
@@ -26,8 +26,7 @@ async function preboot() {
         console.log(`...starting up with ${yyp_path}`);
 
         // let yy_boss_path = await YyBoss.fetchYyBoss(YY_BOSS_DIR);
-        const yy_boss_path = path.join(YY_BOSS_DIR, 'yy-boss-cli.exe');
-        const [status, yyp_boss] = await YyBoss.create(yy_boss_path, yyp_path, WD, new LogToFile('log.log'));
+        const [status, yyp_boss] = await YyBoss.create(YY_BOSS_PATH, yyp_path, WD, new LogToFile('log.log'));
 
         if (status.success) {
             console.log('successful parse');
