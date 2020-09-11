@@ -12,6 +12,7 @@ import { SerializedDataValue } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
 import { VfsCommandType } from 'yy-boss-ts/out/vfs';
 import { YypBossError } from 'yy-boss-ts/out/error';
+import { GetResource } from 'yy-boss-ts/out/resource';
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     constructor(public yyBoss: YyBoss) {}
@@ -40,7 +41,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                         )
                     );
 
-                    if (this.yyBoss.hasError === false) {
+                    if (this.yyBoss.hasError() === false) {
                         let events = data.associatedData as SerializedDataValue;
                         let assoc_data = JSON.parse(events.data);
 
@@ -87,14 +88,25 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         }
 
         for (const newFile of fg.files) {
-            output.push(
-                new ResourceItem(
-                    newFile.filesystemPath.name,
-                    newFile.filesystemPath.path,
-                    newFile.resourceDescriptor.resource,
-                    this.yyBoss
-                )
-            );
+            switch (newFile.resourceDescriptor.resource) {
+                case Resource.Object:
+                    output.push(new ObjectItem(newFile.filesystemPath.name, newFile.filesystemPath.path));
+                    break;
+
+                case Resource.Script:
+                    output.push(new ScriptItem(newFile.filesystemPath.name, newFile.filesystemPath.path));
+                    break;
+
+                default:
+                    output.push(
+                        new OtherResource(
+                            newFile.filesystemPath.name,
+                            newFile.resourceDescriptor.resource,
+                            newFile.filesystemPath.path
+                        )
+                    );
+                    break;
+            }
         }
 
         return output;
@@ -114,24 +126,10 @@ export abstract class GmItem extends vscode.TreeItem {
         super(label, collapsibleState);
     }
 
-    abstract get tooltip(): string;
-    abstract get id(): string;
-    get command(): vscode.Command | undefined {
-        return undefined;
-    }
-
-    get iconPath(): vscode.ThemeIcon {
-        switch (this.collapsibleState) {
-            case vscode.TreeItemCollapsibleState.None:
-                return new vscode.ThemeIcon('file-code');
-
-            case vscode.TreeItemCollapsibleState.Collapsed:
-                return new vscode.ThemeIcon('folder');
-
-            case vscode.TreeItemCollapsibleState.Expanded:
-                return new vscode.ThemeIcon('folder-opened');
-        }
-    }
+    abstract tooltip: string;
+    abstract id: string;
+    command: vscode.Command | undefined = undefined;
+    abstract iconPath: vscode.ThemeIcon;
 
     public static async onEditResource(gmItem: GmItem) {
         switch (gmItem.gmItemType) {
@@ -139,20 +137,22 @@ export abstract class GmItem extends vscode.TreeItem {
                 break;
             case GmItemType.Folder:
                 const folder = gmItem as FolderItem;
-                const new_name = await vscode.window.showInputBox({
+                const new_folder_name = await vscode.window.showInputBox({
                     value: folder.label,
                     prompt: 'New Folder Name',
                 });
 
-                if (new_name !== undefined) {
+                if (new_folder_name !== undefined) {
                     const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-                    await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_name));
+                    await yyBoss.writeCommand(
+                        new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name)
+                    );
 
-                    if (yyBoss.hasError === false) {
+                    if (yyBoss.hasError() == false) {
                         await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
 
-                        if (yyBoss.hasError) {
-                            console.log(yyBoss.error?.error.type);
+                        if (yyBoss.hasError()) {
+                            console.log(yyBoss.error.error.type);
                         } else {
                             GmItem.ITEM_PROVIDER?.refresh(undefined);
                         }
@@ -163,6 +163,41 @@ export abstract class GmItem extends vscode.TreeItem {
 
                 break;
             case GmItemType.Resource:
+                const resource = gmItem as ResourceItem;
+        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+                const new_resource_name = await vscode.window.showInputBox({
+                    value: resource.resourceName,
+                    prompt: `Rename ${resource.resource}`,
+                    async validateInput(input): string | undefined {
+                        let response = await yyBoss.writeCommand(new GetResource())
+                    },
+                });
+
+                if (new_resource_name !== undefined && new_resource_name.length > 0) {
+                    const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+                    await yyBoss.writeCommand(
+                        new resourceCommands.RenameResource(
+                            resource.resource,
+                            resource.resourceName,
+                            new_resource_name
+                        )
+                    );
+
+                    if (yyBoss.hasError()) {
+                        vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                    } else {
+                        await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+
+                        if (yyBoss.hasError()) {
+                            vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                        } else {
+                            console.log('success');
+                            GmItem.ITEM_PROVIDER?.refresh(undefined);
+                        }
+                    }
+                }
+
                 break;
         }
     }
@@ -186,6 +221,8 @@ export class FolderItem extends GmItem {
     get id(): string {
         return this.viewPath + this.label;
     }
+
+    iconPath = new vscode.ThemeIcon('folder');
 
     public static async onCreateFolder(folder: FolderItem) {
         let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
@@ -255,25 +292,13 @@ export class FolderItem extends GmItem {
     }
 }
 
-export class ResourceItem extends GmItem {
+abstract class ResourceItem extends GmItem {
     public gmItemType = GmItemType.Resource;
+    public abstract readonly resource: Resource;
+    public abstract readonly resourceName: string;
+    public abstract readonly filePath: string;
 
-    constructor(
-        public readonly resourceName: string,
-        public readonly filePath: string,
-        public readonly resource: Resource,
-        private yyBoss: YyBoss
-    ) {
-        super(
-            resourceName,
-            resource === Resource.Object
-                ? vscode.TreeItemCollapsibleState.Collapsed
-                : vscode.TreeItemCollapsibleState.None
-        );
-        if (this.resource !== Resource.Object) {
-            this.label = resourceName + '.gml';
-        }
-    }
+    public contextValue = 'resourceItem';
 
     get tooltip(): string {
         return this.label;
@@ -283,19 +308,6 @@ export class ResourceItem extends GmItem {
         return this.filePath + this.label;
     }
 
-    get command(): vscode.Command | undefined {
-        if (this.resource === Resource.Script) {
-            return {
-                command: 'gmVfs.openScript',
-                title: 'Open Script',
-                arguments: [this.resourceName],
-                tooltip: 'Open this Script in the Editor',
-            };
-        } else {
-            return undefined;
-        }
-    }
-
     public static async onOpenScript(scriptName: string) {
         const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
         let path = await boss.writeCommand(new utilities.ScriptGmlPath(scriptName));
@@ -303,6 +315,53 @@ export class ResourceItem extends GmItem {
         let document = await vscode.workspace.openTextDocument(path.requestedPath);
         vscode.window.showTextDocument(document);
     }
+}
+
+export class ScriptItem extends ResourceItem {
+    public readonly resource = Resource.Script;
+
+    constructor(public readonly resourceName: string, public readonly filePath: string) {
+        super(resourceName + '.gml', vscode.TreeItemCollapsibleState.None);
+    }
+
+    iconPath = new vscode.ThemeIcon('file-code');
+
+    command: vscode.Command = {
+        command: 'gmVfs.openScript',
+        title: 'Open Script',
+        arguments: [this.resourceName],
+        tooltip: 'Open this Script in the Editor',
+    };
+}
+
+export class ObjectItem extends ResourceItem {
+    public readonly resource = Resource.Object;
+
+    constructor(public readonly resourceName: string, public readonly filePath: string) {
+        super(resourceName, vscode.TreeItemCollapsibleState.Collapsed);
+    }
+
+    iconPath = new vscode.ThemeIcon('group-by-ref-type');
+
+    // commands will live here!
+    // command: vscode.Command = {
+    //     command: 'gmVfs.openScript',
+    //     title: 'Open Script',
+    //     arguments: [this.resourceName],
+    //     tooltip: 'Open this Script in the Editor',
+    // };
+}
+
+export class OtherResource extends ResourceItem {
+    constructor(
+        public readonly resourceName: string,
+        public readonly resource: Resource,
+        public readonly filePath: string
+    ) {
+        super(resourceName, vscode.TreeItemCollapsibleState.Collapsed);
+    }
+
+    iconPath = new vscode.ThemeIcon('file-media');
 }
 
 export class EventItem extends GmItem {
@@ -321,14 +380,14 @@ export class EventItem extends GmItem {
         return this.objectName + this.label;
     }
 
-    get command(): vscode.Command {
-        return {
-            command: 'gmVfs.openEvent',
-            title: 'Open Event',
-            arguments: [this.objectName, this.eventFname],
-            tooltip: 'Open this Event in the Editor',
-        };
-    }
+    command: vscode.Command = {
+        command: 'gmVfs.openEvent',
+        title: 'Open Event',
+        arguments: [this.objectName, this.eventFname],
+        tooltip: 'Open this Event in the Editor',
+    };
+
+    iconPath = new vscode.ThemeIcon('file-code');
 
     public static async onOpenEvent(object_name: string, event_fname: string) {
         const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
@@ -336,5 +395,22 @@ export class EventItem extends GmItem {
 
         let document = await vscode.workspace.openTextDocument(path.requestedPath);
         vscode.window.showTextDocument(document);
+    }
+}
+
+function test() {
+    class Foo {
+        constructor(public me: number | undefined) {}
+
+        mutate_me(): void {
+            this.me = 3;
+        }
+    }
+
+    let foo = new Foo(3);
+
+    if (foo.me === undefined) {
+        foo.mutate_me();
+        let x: undefined = foo.me;
     }
 }

@@ -45,7 +45,7 @@ async function main(yyBoss: YyBoss) {
 
     vscode.window.registerTreeDataProvider('gmVfs', item_provider);
 
-    vscode.commands.registerCommand('gmVfs.openScript', vfs.ResourceItem.onOpenScript);
+    vscode.commands.registerCommand('gmVfs.openScript', vfs.ScriptItem.onOpenScript);
     vscode.commands.registerCommand('gmVfs.openEvent', vfs.EventItem.onOpenEvent);
     vscode.commands.registerCommand('gmVfs.createFolder', vfs.FolderItem.onCreateFolder);
     vscode.commands.registerCommand('gmVfs.deleteFolder', vfs.FolderItem.onDeleteFolder);

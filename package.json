@@ -78,7 +78,7 @@
                 },
                 {
                     "command": "gmVfs.editResource",
-                    "when": "view == gmVfs && viewItem == folderItem",
+                    "when": "view == gmVfs && viewItem == resourceItem",
                     "group": "zdelete"
                 }
             ]
