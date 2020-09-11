@@ -8,7 +8,7 @@ import {
     serializationCommands as serializationCommand,
     vfsCommands,
 } from 'yy-boss-ts';
-import { SerializedDataValue } from 'yy-boss-ts/out/core';
+import { FilesystemPath, SerializedDataValue } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
 import { VfsCommandType } from 'yy-boss-ts/out/vfs';
 import { YypBossError } from 'yy-boss-ts/out/error';
@@ -17,26 +17,26 @@ import { GetResource } from 'yy-boss-ts/out/resource';
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     constructor(public yyBoss: YyBoss) {}
 
-    async getChildren(element?: GmItem | undefined): Promise<GmItem[]> {
-        if (element === undefined) {
+    async getChildren(parent?: GmItem | undefined): Promise<GmItem[]> {
+        if (parent === undefined) {
             let result = await this.yyBoss.writeCommand(new vfsCommand.GetFullVfs());
 
-            return this.createChildrenOfFolder(result.flatFolderGraph);
+            return this.createChildrenOfFolder(result.flatFolderGraph, parent);
         } else {
-            switch (element.gmItemType) {
+            switch (parent.gmItemType) {
                 case GmItemType.Folder:
-                    let folderElement = element as FolderItem;
+                    let folderElement = parent as FolderItem;
                     let result = await this.yyBoss.writeCommand(
                         new vfsCommand.GetFolderVfs(folderElement.viewPath)
                     );
 
-                    return this.createChildrenOfFolder(result.flatFolderGraph);
+                    return this.createChildrenOfFolder(result.flatFolderGraph, parent);
                 case GmItemType.Resource:
-                    let resourceElement = element as ResourceItem;
+                    let resourceElement = parent as ResourceItem;
                     let data = await this.yyBoss.writeCommand(
                         new resourceCommands.GetAssociatedDataResource(
                             resourceElement.resource,
-                            element.label,
+                            parent.label,
                             false
                         )
                     );
@@ -53,7 +53,9 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                         let output: GmItem[] = [];
                         for (let i = 0; i < betterNames.eventNames.length; i++) {
                             const name = betterNames.eventNames[i];
-                            output.push(new EventItem(name, resourceElement.resourceName, fileNames[i]));
+                            output.push(
+                                new EventItem(name, resourceElement.filesystemPath.name, fileNames[i], parent)
+                            );
                         }
 
                         return output;
@@ -71,6 +73,10 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         return element;
     }
 
+    getParent(element: GmItem): vscode.ProviderResult<GmItem> {
+        return element.parent;
+    }
+
     private _onDidChangeTreeData: vscode.EventEmitter<GmItem | undefined> = new vscode.EventEmitter<
         GmItem | undefined
     >();
@@ -81,28 +87,32 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         this._onDidChangeTreeData.fire(item);
     }
 
-    private createChildrenOfFolder(fg: vfsCommand.outputs.FlatFolderGraph): GmItem[] {
+    private createChildrenOfFolder(
+        fg: vfsCommand.outputs.FlatFolderGraph,
+        parent: GmItem | undefined
+    ): GmItem[] {
         const output: GmItem[] = [];
         for (const newFolder of fg.folders) {
-            output.push(new FolderItem(newFolder.name, newFolder.path));
+            output.push(new FolderItem(newFolder.name, newFolder.path, parent));
         }
 
         for (const newFile of fg.files) {
             switch (newFile.resourceDescriptor.resource) {
                 case Resource.Object:
-                    output.push(new ObjectItem(newFile.filesystemPath.name, newFile.filesystemPath.path));
+                    output.push(new ObjectItem(newFile.filesystemPath, parent));
                     break;
 
                 case Resource.Script:
-                    output.push(new ScriptItem(newFile.filesystemPath.name, newFile.filesystemPath.path));
+                    output.push(new ScriptItem(newFile.filesystemPath, parent));
                     break;
 
                 default:
                     output.push(
                         new OtherResource(
-                            newFile.filesystemPath.name,
+                            newFile.filesystemPath,
+                            newFile.resourceDescriptor.parentLocation,
                             newFile.resourceDescriptor.resource,
-                            newFile.filesystemPath.path
+                            parent
                         )
                     );
                     break;
@@ -121,6 +131,7 @@ enum GmItemType {
 
 export abstract class GmItem extends vscode.TreeItem {
     public abstract readonly gmItemType: GmItemType;
+    public abstract readonly parent: GmItem | undefined;
 
     constructor(public label: string, public collapsibleState: vscode.TreeItemCollapsibleState) {
         super(label, collapsibleState);
@@ -154,7 +165,7 @@ export abstract class GmItem extends vscode.TreeItem {
                         if (yyBoss.hasError()) {
                             console.log(yyBoss.error.error.type);
                         } else {
-                            GmItem.ITEM_PROVIDER?.refresh(undefined);
+                            GmItem.ITEM_PROVIDER?.refresh(folder.parent);
                         }
                     } else {
                         console.log(yyBoss.error?.error.type);
@@ -164,13 +175,19 @@ export abstract class GmItem extends vscode.TreeItem {
                 break;
             case GmItemType.Resource:
                 const resource = gmItem as ResourceItem;
-        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+                let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
 
                 const new_resource_name = await vscode.window.showInputBox({
-                    value: resource.resourceName,
+                    value: resource.filesystemPath.name,
                     prompt: `Rename ${resource.resource}`,
-                    async validateInput(input): string | undefined {
-                        let response = await yyBoss.writeCommand(new GetResource())
+                    async validateInput(input: string): Promise<string | undefined> {
+                        let response = await yyBoss.writeCommand(new utilities.CanUseResourceName(input));
+
+                        if (response.nameIsValid) {
+                            return undefined;
+                        } else {
+                            return `Name is either taken or is not a valid entry`;
+                        }
                     },
                 });
 
@@ -179,7 +196,7 @@ export abstract class GmItem extends vscode.TreeItem {
                     await yyBoss.writeCommand(
                         new resourceCommands.RenameResource(
                             resource.resource,
-                            resource.resourceName,
+                            resource.filesystemPath.name,
                             new_resource_name
                         )
                     );
@@ -192,8 +209,7 @@ export abstract class GmItem extends vscode.TreeItem {
                         if (yyBoss.hasError()) {
                             vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
                         } else {
-                            console.log('success');
-                            GmItem.ITEM_PROVIDER?.refresh(undefined);
+                            GmItem.ITEM_PROVIDER?.refresh(resource.parent);
                         }
                     }
                 }
@@ -209,9 +225,12 @@ export class FolderItem extends GmItem {
     public gmItemType = GmItemType.Folder;
     public contextValue = 'folderItem';
 
-    constructor(label: string, public readonly viewPath: string) {
+    constructor(
+        public readonly label: string,
+        public readonly viewPath: string,
+        public readonly parent: GmItem | undefined
+    ) {
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
-        this.label = label;
     }
 
     get tooltip(): string {
@@ -286,7 +305,7 @@ export class FolderItem extends GmItem {
         if (yyBoss.error === undefined) {
             await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
             if (yyBoss.error === undefined) {
-                GmItem.ITEM_PROVIDER?.refresh(undefined);
+                GmItem.ITEM_PROVIDER?.refresh(folder.parent);
             }
         }
     }
@@ -295,8 +314,7 @@ export class FolderItem extends GmItem {
 abstract class ResourceItem extends GmItem {
     public gmItemType = GmItemType.Resource;
     public abstract readonly resource: Resource;
-    public abstract readonly resourceName: string;
-    public abstract readonly filePath: string;
+    public abstract readonly filesystemPath: FilesystemPath;
 
     public contextValue = 'resourceItem';
 
@@ -305,8 +323,25 @@ abstract class ResourceItem extends GmItem {
     }
 
     get id(): string {
-        return this.filePath + this.label;
+        return this.filesystemPath.path + this.label;
     }
+}
+
+export class ScriptItem extends ResourceItem {
+    public readonly resource = Resource.Script;
+
+    constructor(public readonly filesystemPath: FilesystemPath, public readonly parent: GmItem | undefined) {
+        super(filesystemPath.name + '.gml', vscode.TreeItemCollapsibleState.None);
+    }
+
+    iconPath = new vscode.ThemeIcon('file-code');
+
+    command: vscode.Command = {
+        command: 'gmVfs.openScript',
+        title: 'Open Script',
+        arguments: [this.filesystemPath.name],
+        tooltip: 'Open this Script in the Editor',
+    };
 
     public static async onOpenScript(scriptName: string) {
         const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
@@ -317,28 +352,11 @@ abstract class ResourceItem extends GmItem {
     }
 }
 
-export class ScriptItem extends ResourceItem {
-    public readonly resource = Resource.Script;
-
-    constructor(public readonly resourceName: string, public readonly filePath: string) {
-        super(resourceName + '.gml', vscode.TreeItemCollapsibleState.None);
-    }
-
-    iconPath = new vscode.ThemeIcon('file-code');
-
-    command: vscode.Command = {
-        command: 'gmVfs.openScript',
-        title: 'Open Script',
-        arguments: [this.resourceName],
-        tooltip: 'Open this Script in the Editor',
-    };
-}
-
 export class ObjectItem extends ResourceItem {
     public readonly resource = Resource.Object;
 
-    constructor(public readonly resourceName: string, public readonly filePath: string) {
-        super(resourceName, vscode.TreeItemCollapsibleState.Collapsed);
+    constructor(public readonly filesystemPath: FilesystemPath, public readonly parent: GmItem | undefined) {
+        super(filesystemPath.name, vscode.TreeItemCollapsibleState.Collapsed);
     }
 
     iconPath = new vscode.ThemeIcon('group-by-ref-type');
@@ -354,11 +372,12 @@ export class ObjectItem extends ResourceItem {
 
 export class OtherResource extends ResourceItem {
     constructor(
-        public readonly resourceName: string,
+        public readonly filesystemPath: FilesystemPath,
+        public readonly parentLocation: string,
         public readonly resource: Resource,
-        public readonly filePath: string
+        public readonly parent: GmItem | undefined
     ) {
-        super(resourceName, vscode.TreeItemCollapsibleState.Collapsed);
+        super(filesystemPath.name, vscode.TreeItemCollapsibleState.Collapsed);
     }
 
     iconPath = new vscode.ThemeIcon('file-media');
@@ -367,7 +386,12 @@ export class OtherResource extends ResourceItem {
 export class EventItem extends GmItem {
     public gmItemType = GmItemType.Event;
 
-    constructor(private eventNamePretty: string, private objectName: string, private eventFname: string) {
+    constructor(
+        private eventNamePretty: string,
+        private objectName: string,
+        private eventFname: string,
+        public readonly parent: GmItem | undefined
+    ) {
         super(eventNamePretty, vscode.TreeItemCollapsibleState.None);
         this.label = eventNamePretty + '.gml';
     }
