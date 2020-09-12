@@ -3,6 +3,8 @@ import * as path from 'path';
 import { YY_BOSS_PATH, WD } from './config';
 import { LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
+import { Resource } from 'yy-boss-ts';
+import { parentPort } from 'worker_threads';
 
 async function preboot() {
     const paths = vscode.workspace.workspaceFolders as readonly vscode.WorkspaceFolder[];
@@ -46,10 +48,18 @@ async function main(yyBoss: YyBoss) {
     vscode.window.registerTreeDataProvider('gmVfs', item_provider);
 
     vscode.commands.registerCommand('gmVfs.openScript', vfs.ScriptItem.onOpenScript);
+    vscode.commands.registerCommand('gmVfs.createScript', (parent: vfs.FolderItem) => {
+        vfs.ResourceItem.onCreateResource(parent, Resource.Script);
+    });
     vscode.commands.registerCommand('gmVfs.openEvent', vfs.EventItem.onOpenEvent);
     vscode.commands.registerCommand('gmVfs.createFolder', vfs.FolderItem.onCreateFolder);
     vscode.commands.registerCommand('gmVfs.deleteFolder', vfs.FolderItem.onDeleteFolder);
-    vscode.commands.registerCommand('gmVfs.editResource', vfs.GmItem.onEditResource);
+
+    vscode.commands.registerCommand('gmVfs.createObject', (parent: vfs.FolderItem) => {
+        vfs.ResourceItem.onCreateResource(parent, Resource.Object);
+    });
+    vscode.commands.registerCommand('gmVfs.deleteResource', vfs.ResourceItem.onDeleteResource);
+    vscode.commands.registerCommand('gmVfs.renameResource', vfs.ResourceItem.onRenameResource);
 }
 
 preboot();

@@ -8,11 +8,12 @@ import {
     serializationCommands as serializationCommand,
     vfsCommands,
 } from 'yy-boss-ts';
-import { FilesystemPath, SerializedDataValue } from 'yy-boss-ts/out/core';
+import { FilesystemPath, SerializedDataDefault, SerializedDataValue } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
 import { VfsCommandType } from 'yy-boss-ts/out/vfs';
 import { YypBossError } from 'yy-boss-ts/out/error';
 import { GetResource } from 'yy-boss-ts/out/resource';
+import { SerializationCommand } from 'yy-boss-ts/out/serialization';
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     constructor(public yyBoss: YyBoss) {}
@@ -142,82 +143,6 @@ export abstract class GmItem extends vscode.TreeItem {
     command: vscode.Command | undefined = undefined;
     abstract iconPath: vscode.ThemeIcon;
 
-    public static async onEditResource(gmItem: GmItem) {
-        switch (gmItem.gmItemType) {
-            case GmItemType.Event:
-                break;
-            case GmItemType.Folder:
-                const folder = gmItem as FolderItem;
-                const new_folder_name = await vscode.window.showInputBox({
-                    value: folder.label,
-                    prompt: 'New Folder Name',
-                });
-
-                if (new_folder_name !== undefined) {
-                    const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-                    await yyBoss.writeCommand(
-                        new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name)
-                    );
-
-                    if (yyBoss.hasError() == false) {
-                        await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
-
-                        if (yyBoss.hasError()) {
-                            console.log(yyBoss.error.error.type);
-                        } else {
-                            GmItem.ITEM_PROVIDER?.refresh(folder.parent);
-                        }
-                    } else {
-                        console.log(yyBoss.error?.error.type);
-                    }
-                }
-
-                break;
-            case GmItemType.Resource:
-                const resource = gmItem as ResourceItem;
-                let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-
-                const new_resource_name = await vscode.window.showInputBox({
-                    value: resource.filesystemPath.name,
-                    prompt: `Rename ${resource.resource}`,
-                    async validateInput(input: string): Promise<string | undefined> {
-                        let response = await yyBoss.writeCommand(new utilities.CanUseResourceName(input));
-
-                        if (response.nameIsValid) {
-                            return undefined;
-                        } else {
-                            return `Name is either taken or is not a valid entry`;
-                        }
-                    },
-                });
-
-                if (new_resource_name !== undefined && new_resource_name.length > 0) {
-                    const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-                    await yyBoss.writeCommand(
-                        new resourceCommands.RenameResource(
-                            resource.resource,
-                            resource.filesystemPath.name,
-                            new_resource_name
-                        )
-                    );
-
-                    if (yyBoss.hasError()) {
-                        vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
-                    } else {
-                        await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
-
-                        if (yyBoss.hasError()) {
-                            vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
-                        } else {
-                            GmItem.ITEM_PROVIDER?.refresh(resource.parent);
-                        }
-                    }
-                }
-
-                break;
-        }
-    }
-
     public static ITEM_PROVIDER: GmItemProvider | undefined;
 }
 
@@ -297,21 +222,53 @@ export class FolderItem extends GmItem {
         }
     }
 
+    public static async OnRenameFolder(folder: FolderItem) {
+        const new_folder_name = await vscode.window.showInputBox({
+            value: folder.label,
+            prompt: 'New Folder Name',
+        });
+
+        if (new_folder_name !== undefined) {
+            const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+            await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
+
+            if (yyBoss.hasError() == false) {
+                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+
+                if (yyBoss.hasError()) {
+                    console.log(yyBoss.error.error.type);
+                } else {
+                    GmItem.ITEM_PROVIDER?.refresh(folder.parent);
+                }
+            } else {
+                console.log(yyBoss.error?.error.type);
+            }
+        }
+    }
+
     public static async onDeleteFolder(folder: FolderItem) {
         let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
 
-        await yyBoss.writeCommand(new vfsCommand.RemoveFolderVfs(folder.viewPath, true));
+        let output = await vscode.window.showWarningMessage(
+            `Are you sure you want to delete ${folder.label}? Restoring folders can be difficult by hand.`,
+            { modal: true },
+            'Delete'
+        );
 
-        if (yyBoss.error === undefined) {
-            await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+        if (output === 'Delete') {
+            await yyBoss.writeCommand(new vfsCommand.RemoveFolderVfs(folder.viewPath, true));
+
             if (yyBoss.error === undefined) {
-                GmItem.ITEM_PROVIDER?.refresh(folder.parent);
+                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+                if (yyBoss.error === undefined) {
+                    GmItem.ITEM_PROVIDER?.refresh(folder.parent);
+                }
             }
         }
     }
 }
 
-abstract class ResourceItem extends GmItem {
+export abstract class ResourceItem extends GmItem {
     public gmItemType = GmItemType.Resource;
     public abstract readonly resource: Resource;
     public abstract readonly filesystemPath: FilesystemPath;
@@ -324,6 +281,128 @@ abstract class ResourceItem extends GmItem {
 
     get id(): string {
         return this.filesystemPath.path + this.label;
+    }
+
+    public static async onRenameResource(resourceItem: ResourceItem) {
+        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+        const new_resource_name = await vscode.window.showInputBox({
+            value: resourceItem.filesystemPath.name,
+            prompt: `Rename ${resourceItem.resource}`,
+            async validateInput(input: string): Promise<string | undefined> {
+                let response = await yyBoss.writeCommand(new utilities.CanUseResourceName(input));
+
+                if (response.nameIsValid) {
+                    return undefined;
+                } else {
+                    return `Name is either taken or is not a valid entry`;
+                }
+            },
+        });
+
+        if (new_resource_name !== undefined && new_resource_name.length > 0) {
+            const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+            await yyBoss.writeCommand(
+                new resourceCommands.RenameResource(
+                    resourceItem.resource,
+                    resourceItem.filesystemPath.name,
+                    new_resource_name
+                )
+            );
+
+            if (yyBoss.hasError()) {
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+            } else {
+                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+
+                if (yyBoss.hasError()) {
+                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                } else {
+                    GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
+                }
+            }
+        }
+    }
+
+    public static async onDeleteResource(resourceItem: ResourceItem) {
+        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+        let output = await vscode.window.showWarningMessage(
+            `Are you sure you want to delete ${resourceItem.label}? Restoring resources can be difficult by hand.`,
+            { modal: true },
+            'Delete'
+        );
+
+        if (output === 'Delete') {
+            await yyBoss.writeCommand(
+                new resourceCommands.RemoveResource(resourceItem.resource, resourceItem.filesystemPath.name)
+            );
+
+            if (yyBoss.hasError()) {
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+            } else {
+                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+
+                if (yyBoss.hasError()) {
+                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                } else {
+                    GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
+                }
+            }
+        }
+    }
+
+    public static async onCreateResource(parent: FolderItem, resource: Resource) {
+        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+        const new_resource_name = await vscode.window.showInputBox({
+            value: `New ${resource}`,
+            prompt: `Create a new ${resource}`,
+            async validateInput(input: string): Promise<string | undefined> {
+                let response = await yyBoss.writeCommand(new utilities.CanUseResourceName(input));
+
+                if (response.nameIsValid) {
+                    return undefined;
+                } else {
+                    return `Name is either taken or is not a valid entry`;
+                }
+            },
+        });
+
+        if (new_resource_name == undefined || new_resource_name.length == 0) {
+            return;
+        }
+
+        let new_resource = await yyBoss.writeCommand(
+            new utilities.CreateCommand(resource, new_resource_name, {
+                name: parent.label,
+                path: parent.viewPath,
+            })
+        );
+
+        let success = await yyBoss.writeCommand(
+            new resourceCommands.AddResource(resource, new_resource.resource, new SerializedDataDefault())
+        );
+
+        if (yyBoss.hasError()) {
+            vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+        } else {
+            await yyBoss.writeCommand(new SerializationCommand());
+
+            if (yyBoss.hasError()) {
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+            } else {
+                GmItem.ITEM_PROVIDER?.refresh(parent);
+
+                // we immediately reveal a script...
+                if (resource === Resource.Script) {
+                    let path = await yyBoss.writeCommand(new utilities.ScriptGmlPath(new_resource_name));
+
+                    let document = await vscode.workspace.openTextDocument(path.requestedPath);
+                    vscode.window.showTextDocument(document);
+                }
+            }
+        }
     }
 }
 
@@ -361,13 +440,9 @@ export class ObjectItem extends ResourceItem {
 
     iconPath = new vscode.ThemeIcon('group-by-ref-type');
 
-    // commands will live here!
-    // command: vscode.Command = {
-    //     command: 'gmVfs.openScript',
-    //     title: 'Open Script',
-    //     arguments: [this.resourceName],
-    //     tooltip: 'Open this Script in the Editor',
-    // };
+    public static async onCreateEvent(objectItem: ObjectItem) {
+        
+    }
 }
 
 export class OtherResource extends ResourceItem {
@@ -419,22 +494,5 @@ export class EventItem extends GmItem {
 
         let document = await vscode.workspace.openTextDocument(path.requestedPath);
         vscode.window.showTextDocument(document);
-    }
-}
-
-function test() {
-    class Foo {
-        constructor(public me: number | undefined) {}
-
-        mutate_me(): void {
-            this.me = 3;
-        }
-    }
-
-    let foo = new Foo(3);
-
-    if (foo.me === undefined) {
-        foo.mutate_me();
-        let x: undefined = foo.me;
     }
 }
