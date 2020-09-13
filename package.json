@@ -6,9 +6,13 @@
     "engines": {
         "vscode": "^1.42.0"
     },
-    "publisher": "jack",
+    "categories": [
+        "Programming Languages"
+    ],
+    "publisher": "gmcode",
+    "repository": "https://github.com/sanbox-irl/gm-code-vsc",
     "activationEvents": [
-        "onView:gmVfs"
+        "workspaceContains:**/*.yyp"
     ],
     "contributes": {
         "views": {
@@ -24,6 +28,11 @@
                 "command": "gmVfs.openScript",
                 "title": "Open Script",
                 "category": "Open"
+            },
+            {
+                "command": "gmVfs.reloadWorkspace",
+                "title": "Reload",
+                "icon": "$(refresh)"
             },
             {
                 "command": "gmVfs.openEvent",
@@ -115,6 +124,13 @@
             }
         ],
         "menus": {
+            "view/title": [
+                {
+                    "command": "gmVfs.reloadWorkspace",
+                    "when": "view == gmVfs",
+                    "group": "navigation"
+                }
+            ],
             "view/item/context": [
                 {
                     "command": "gmVfs.createScript",
@@ -194,7 +210,7 @@
             ]
         }
     },
-    "main": "out/index.js",
+    "main": "out/extension.js",
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",

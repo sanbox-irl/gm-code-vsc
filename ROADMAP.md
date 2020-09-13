@@ -18,8 +18,9 @@
   - [x] Edit Object Name
   - [x] Add Event
   - [x] Remove Event
-- [ ] Infrastructure
-  - [ ] Reload Workspace
+- [-] Infrastructure
+  - [x] Reload Workspace
   - [ ] Better Crash Reports and Logging
-  - [ ] Make sure we support workspaces
+  - [x] Make sure we support workspaces
   - [ ] Reveal Api
+  - [ ] Create Script, Object, Folder at Root
