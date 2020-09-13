@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { YY_BOSS_PATH } from './config';
-import { ClosureStatus, LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
+import { ClosureStatus, LogToFile, YyBoss, YyBossDownloadStatus } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
 import { Resource } from 'yy-boss-ts';
 import { ProjectMetadata } from 'yy-boss-ts/out/core';
@@ -34,13 +33,44 @@ export async function activate(context: vscode.ExtensionContext) {
         if (yyp_path !== undefined) {
             let log_path = path.join(context.logPath, 'log.log');
 
-            console.log(`Gm Code server is ${YY_BOSS_PATH}`);
             console.log(`Logging is ${log_path}`);
             console.log(`Working Directory is ${context.globalStoragePath}`);
 
+            let override: string | undefined = vscode.workspace
+                .getConfiguration('gmCode')
+                .get('overrideServerPath');
+
+            let boss_path: string;
+
+            // do we not have an override here at all? sometimes it returns null?
+            if (override === undefined || override === null) {
+                let boss_download_status = await YyBoss.downloadStatus(context.globalStoragePath);
+
+                if (boss_download_status == YyBossDownloadStatus.Success) {
+                    // this will just return the subpath actually, which is pretty messy!
+                    boss_path = await YyBoss.fetchYyBoss(context.globalStoragePath);
+                } else {
+                    let output = await vscode.window.showInformationMessage(
+                        'Gm Code needs a backend, local server. Would you like to Download it?',
+                        'Download',
+                        'Cancel'
+                    );
+
+                    if (output !== 'Download') {
+                        return undefined;
+                    }
+
+                    boss_path = await YyBoss.fetchYyBoss(context.globalStoragePath);
+                }
+            } else {
+                boss_path = override;
+            }
+
+            console.log(`Gm Code server is ${boss_path}`);
+
             // let yy_boss_path = await YyBoss.fetchYyBoss(YY_BOSS_DIR);
             const [status, yyp_boss] = await YyBoss.create(
-                YY_BOSS_PATH,
+                boss_path,
                 yyp_path,
                 context.globalStoragePath,
                 new LogToFile(log_path)

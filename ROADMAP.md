@@ -28,6 +28,6 @@
     - [x] Object
     - [x] Reload
     - [x] Collapse All
-  - [ ] Sort alphanumerically
-  - [ ] Make sure Fetch works
-  - [ ] Basic set up for the extension (readme, some docs, etc)
+  - [x] Sort alphanumerically
+  - [x] Make sure Fetch works
+  - [-] Basic set up for the extension (readme, some docs, etc)

@@ -9,12 +9,24 @@
     "categories": [
         "Programming Languages"
     ],
-    "publisher": "gmcode",
+    "publisher": "sanbox",
     "repository": "https://github.com/sanbox-irl/gm-code-vsc",
     "activationEvents": [
-        "workspaceContains:**/*.yyp"
+        "workspaceContains:*.yyp"
     ],
     "contributes": {
+        "configuration": {
+            "title": "Gm Code",
+            "properties": {
+                "gmCode.overrideServerPath": {
+                    "description": "Override path to the gm-code backend server. Used to develop the extension.",
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            }
+        },
         "views": {
             "explorer": [
                 {
