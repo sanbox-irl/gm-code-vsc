@@ -101,10 +101,12 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         parent: GmItem | undefined
     ): Promise<GmItem[]> {
         const output: GmItem[] = [];
+        fg.folders.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
         for (const newFolder of fg.folders) {
             output.push(new FolderItem(newFolder.name, newFolder.path, parent));
         }
 
+        fg.files.sort((lhs, rhs) => lhs.filesystemPath.name.localeCompare(rhs.filesystemPath.name));
         for (const newFile of fg.files) {
             switch (newFile.resourceDescriptor.resource) {
                 case Resource.Object:
@@ -388,7 +390,7 @@ export abstract class ResourceItem extends GmItem {
         }
 
         let view_path: ViewPath;
-        
+
         if (parent === undefined) {
             view_path = GmItem.PROJECT_METADATA?.rootFile as ViewPath;
         } else {
