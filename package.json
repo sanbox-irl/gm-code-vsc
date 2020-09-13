@@ -22,26 +22,28 @@
         "commands": [
             {
                 "command": "gmVfs.openScript",
-                "title": "Open Script"
+                "title": "Open Script",
+                "category": "Open"
             },
             {
                 "command": "gmVfs.openEvent",
-                "title": "Open Event"
+                "title": "Open Event",
+                "category": "Open"
             },
             {
                 "command": "gmVfs.createScript",
                 "title": "New Script",
-                "category": "Create Resource"
+                "category": "Create"
             },
             {
                 "command": "gmVfs.createObject",
                 "title": "New Object",
-                "category": "Create Resource"
+                "category": "Create"
             },
             {
                 "command": "gmVfs.createFolder",
                 "title": "New Folder",
-                "category": "Create Folder"
+                "category": "Create"
             },
             {
                 "command": "gmVfs.deleteFolder",
@@ -57,6 +59,59 @@
                 "command": "gmVfs.renameResource",
                 "title": "Rename",
                 "category": "Delete"
+            },
+            {
+                "command": "gmVfs.deleteEvent",
+                "title": "Delete",
+                "category": "Delete"
+            },
+            {
+                "command": "gmVfs.addCreateEvent",
+                "title": "Add Create Event",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canCreateEvent/"
+            },
+            {
+                "command": "gmVfs.addStepEvent",
+                "title": "Add Step Event",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canStepEvent/"
+            },
+            {
+                "command": "gmVfs.addStepEndEvent",
+                "title": "Add End Step Event",
+                "enablement": "view == gmVfs && viewItem =~ /canStepEndEvent/",
+                "category": "Create"
+            },
+            {
+                "command": "gmVfs.addDrawEvent",
+                "title": "Add Draw Event",
+                "enablement": "view == gmVfs && viewItem =~ /canDrawEvent/",
+                "category": "Create"
+            },
+            {
+                "command": "gmVfs.addDrawEndEvent",
+                "title": "Add Draw End Event",
+                "enablement": "view == gmVfs && viewItem =~ /canDrawEndEvent/",
+                "category": "Create"
+            },
+            {
+                "command": "gmVfs.addRoomStartEvent",
+                "title": "Add Room Start Event",
+                "enablement": "view == gmVfs && viewItem =~ /canRoomStartEvent/",
+                "category": "Create"
+            },
+            {
+                "command": "gmVfs.addRoomEndEvent",
+                "title": "Add Room End Event",
+                "enablement": "view == gmVfs && viewItem =~ /canRoomEndEvent/",
+                "category": "Create"
+            },
+            {
+                "command": "gmVfs.addCleanUpEvent",
+                "title": "Add CleanUp Event",
+                "enablement": "view == gmVfs && viewItem =~ /canCleanUpEvent/",
+                "category": "Create"
             }
         ],
         "menus": {
@@ -64,32 +119,77 @@
                 {
                     "command": "gmVfs.createScript",
                     "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "createResource"
+                    "group": "create"
                 },
                 {
                     "command": "gmVfs.createObject",
                     "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "createResource"
+                    "group": "create"
                 },
                 {
                     "command": "gmVfs.createFolder",
                     "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "folderOp"
+                    "group": "create"
                 },
                 {
                     "command": "gmVfs.deleteFolder",
                     "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "zdelete"
+                    "group": "delete"
                 },
                 {
                     "command": "gmVfs.deleteResource",
-                    "when": "view == gmVfs && viewItem == resourceItem",
-                    "group": "zdelete"
+                    "when": "view == gmVfs && viewItem =~ /resourceItem/",
+                    "group": "delete"
                 },
                 {
                     "command": "gmVfs.renameResource",
-                    "when": "view == gmVfs && viewItem == resourceItem",
-                    "group": "zdelete"
+                    "when": "view == gmVfs && viewItem =~ /resourceItem/",
+                    "group": "delete"
+                },
+                {
+                    "command": "gmVfs.addCreateEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@0"
+                },
+                {
+                    "command": "gmVfs.addStepEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@1"
+                },
+                {
+                    "command": "gmVfs.addStepEndEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@2"
+                },
+                {
+                    "command": "gmVfs.addDrawEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@3"
+                },
+                {
+                    "command": "gmVfs.addDrawEndEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@4"
+                },
+                {
+                    "command": "gmVfs.addRoomStartEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@5"
+                },
+                {
+                    "command": "gmVfs.addRoomEndEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@6"
+                },
+                {
+                    "command": "gmVfs.addCleanUpEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/",
+                    "group": "create@7"
+                },
+                {
+                    "command": "gmVfs.deleteEvent",
+                    "when": "view == gmVfs && viewItem == eventItem",
+                    "group": "delete"
                 }
             ]
         }

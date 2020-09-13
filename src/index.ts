@@ -60,6 +60,17 @@ async function main(yyBoss: YyBoss) {
     });
     vscode.commands.registerCommand('gmVfs.deleteResource', vfs.ResourceItem.onDeleteResource);
     vscode.commands.registerCommand('gmVfs.renameResource', vfs.ResourceItem.onRenameResource);
+
+    vscode.commands.registerCommand('gmVfs.deleteEvent', vfs.EventItem.onDeleteEvent);
+
+    // register all our event stuff -- this is a hack until October 2020 when we have submenus
+    // when we will explore DIFFERENT hacks
+    Object.values(vfs.LimitedGmEvent).forEach(value => {
+        const cmd_name = `gmVfs.add${value}Event`;
+        vscode.commands.registerCommand(cmd_name, (parent: vfs.ObjectItem) => {
+            vfs.ObjectItem.onCreateEvent(parent, value);
+        });
+    });
 }
 
 preboot();

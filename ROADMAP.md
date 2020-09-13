@@ -1,4 +1,4 @@
-# TODO
+# ROADMAP
 
 ## v0.1.0
 
@@ -12,12 +12,12 @@
   - [x] Add Script
   - [x] Remove Script
   - [x] Edit Script Name
-- [-] Objects
+- [x] Objects
   - [x] Add Object
   - [x] Remove Object
   - [x] Edit Object Name
-  - [ ] Add Event
-  - [ ] Remove Event
+  - [x] Add Event
+  - [x] Remove Event
 - [ ] Infrastructure
   - [ ] Reload Workspace
   - [ ] Better Crash Reports and Logging

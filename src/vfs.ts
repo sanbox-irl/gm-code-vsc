@@ -1,18 +1,15 @@
 import {
     YyBoss,
     vfsCommands as vfsCommand,
-    ViewPath,
     resourceCommands,
     Resource,
     utilities,
     serializationCommands as serializationCommand,
-    vfsCommands,
+    serializationCommands,
 } from 'yy-boss-ts';
 import { FilesystemPath, SerializedDataDefault, SerializedDataValue } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
-import { VfsCommandType } from 'yy-boss-ts/out/vfs';
 import { YypBossError } from 'yy-boss-ts/out/error';
-import { GetResource } from 'yy-boss-ts/out/resource';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
@@ -22,7 +19,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         if (parent === undefined) {
             let result = await this.yyBoss.writeCommand(new vfsCommand.GetFullVfs());
 
-            return this.createChildrenOfFolder(result.flatFolderGraph, parent);
+            return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
         } else {
             switch (parent.gmItemType) {
                 case GmItemType.Folder:
@@ -31,15 +28,17 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                         new vfsCommand.GetFolderVfs(folderElement.viewPath)
                     );
 
-                    return this.createChildrenOfFolder(result.flatFolderGraph, parent);
+                    return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
                 case GmItemType.Resource:
                     let resourceElement = parent as ResourceItem;
+                    // we probably will never get here!
+                    if (resourceElement.resource !== Resource.Object) {
+                        return [];
+                    }
+                    let object = resourceElement as ObjectItem;
+
                     let data = await this.yyBoss.writeCommand(
-                        new resourceCommands.GetAssociatedDataResource(
-                            resourceElement.resource,
-                            parent.label,
-                            false
-                        )
+                        new resourceCommands.GetAssociatedDataResource(Resource.Object, parent.label, false)
                     );
 
                     if (this.yyBoss.hasError() === false) {
@@ -51,13 +50,24 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                             new utilities.PrettyEventNames(fileNames)
                         );
 
+                        // update capas
+                        const capabilities = Object.values(LimitedGmEvent);
                         let output: GmItem[] = [];
+
                         for (let i = 0; i < betterNames.eventNames.length; i++) {
                             const name = betterNames.eventNames[i];
-                            output.push(
-                                new EventItem(name, resourceElement.filesystemPath.name, fileNames[i], parent)
-                            );
+                            output.push(new EventItem(name, object, fileNames[i], parent));
+
+                            const parse = fname_to_ev(fileNames[i]);
+                            if (parse !== undefined) {
+                                const idx = capabilities.indexOf(parse);
+                                if (idx !== -1) {
+                                    capabilities.splice(idx, 1);
+                                }
+                            }
                         }
+
+                        object.updateContextValue(capabilities);
 
                         return output;
                     } else {
@@ -88,10 +98,10 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         this._onDidChangeTreeData.fire(item);
     }
 
-    private createChildrenOfFolder(
+    private async createChildrenOfFolder(
         fg: vfsCommand.outputs.FlatFolderGraph,
         parent: GmItem | undefined
-    ): GmItem[] {
+    ): Promise<GmItem[]> {
         const output: GmItem[] = [];
         for (const newFolder of fg.folders) {
             output.push(new FolderItem(newFolder.name, newFolder.path, parent));
@@ -100,7 +110,12 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         for (const newFile of fg.files) {
             switch (newFile.resourceDescriptor.resource) {
                 case Resource.Object:
-                    output.push(new ObjectItem(newFile.filesystemPath, parent));
+                    const fileNames = await ObjectItem.getEventCapabilities(
+                        this.yyBoss,
+                        newFile.filesystemPath.name
+                    );
+
+                    output.push(new ObjectItem(newFile.filesystemPath, parent, fileNames));
                     break;
 
                 case Resource.Script:
@@ -124,7 +139,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     }
 }
 
-enum GmItemType {
+const enum GmItemType {
     Folder,
     Resource,
     Event,
@@ -380,7 +395,7 @@ export abstract class ResourceItem extends GmItem {
             })
         );
 
-        let success = await yyBoss.writeCommand(
+        await yyBoss.writeCommand(
             new resourceCommands.AddResource(resource, new_resource.resource, new SerializedDataDefault())
         );
 
@@ -434,14 +449,65 @@ export class ScriptItem extends ResourceItem {
 export class ObjectItem extends ResourceItem {
     public readonly resource = Resource.Object;
 
-    constructor(public readonly filesystemPath: FilesystemPath, public readonly parent: GmItem | undefined) {
+    constructor(
+        public readonly filesystemPath: FilesystemPath,
+        public readonly parent: GmItem | undefined,
+        trackableEvents: LimitedGmEvent[]
+    ) {
         super(filesystemPath.name, vscode.TreeItemCollapsibleState.Collapsed);
+
+        this.updateContextValue(trackableEvents);
+    }
+
+    public updateContextValue(trackableEvents: LimitedGmEvent[]) {
+        this.contextValue = 'objectItem resourceItem';
+        for (const v of trackableEvents) {
+            this.contextValue += ` can${v}Event`;
+        }
     }
 
     iconPath = new vscode.ThemeIcon('group-by-ref-type');
 
-    public static async onCreateEvent(objectItem: ObjectItem) {
-        
+    public static async onCreateEvent(objectItem: ObjectItem, eventType: LimitedGmEvent) {
+        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+        await boss.writeCommand(
+            new utilities.CreateEvent(objectItem.filesystemPath.name, ev_to_fname(eventType))
+        );
+
+        if (boss.hasError()) {
+            vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+        } else {
+            await boss.writeCommand(new serializationCommands.SerializationCommand());
+            if (boss.hasError()) {
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+            } else {
+                GmItem.ITEM_PROVIDER?.refresh(objectItem.parent);
+            }
+        }
+    }
+
+    static async getEventCapabilities(yyBoss: YyBoss, objectName: string): Promise<LimitedGmEvent[]> {
+        let data = await yyBoss.writeCommand(
+            new resourceCommands.GetAssociatedDataResource(Resource.Object, objectName, false)
+        );
+
+        let events = data.associatedData as SerializedDataValue;
+        let assoc_data = JSON.parse(events.data);
+
+        let fileNames = Object.values(LimitedGmEvent);
+
+        for (const name of Object.getOwnPropertyNames(assoc_data)) {
+            const parse = fname_to_ev(name);
+            if (parse !== undefined) {
+                const idx = fileNames.indexOf(parse);
+                if (idx !== -1) {
+                    fileNames.splice(idx, 1);
+                }
+            }
+        }
+
+        return fileNames;
     }
 }
 
@@ -463,12 +529,11 @@ export class EventItem extends GmItem {
 
     constructor(
         private eventNamePretty: string,
-        private objectName: string,
+        private object: ObjectItem,
         private eventFname: string,
         public readonly parent: GmItem | undefined
     ) {
-        super(eventNamePretty, vscode.TreeItemCollapsibleState.None);
-        this.label = eventNamePretty + '.gml';
+        super(eventNamePretty + '.gml', vscode.TreeItemCollapsibleState.None);
     }
 
     get tooltip(): string {
@@ -476,13 +541,15 @@ export class EventItem extends GmItem {
     }
 
     get id(): string {
-        return this.objectName + this.label;
+        return this.object.filesystemPath.name + this.label;
     }
+
+    contextValue = 'eventItem';
 
     command: vscode.Command = {
         command: 'gmVfs.openEvent',
         title: 'Open Event',
-        arguments: [this.objectName, this.eventFname],
+        arguments: [this.object.filesystemPath.name, this.eventFname],
         tooltip: 'Open this Event in the Editor',
     };
 
@@ -494,5 +561,88 @@ export class EventItem extends GmItem {
 
         let document = await vscode.workspace.openTextDocument(path.requestedPath);
         vscode.window.showTextDocument(document);
+    }
+
+    public static async onDeleteEvent(event: EventItem) {
+        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+
+        let output = await vscode.window.showWarningMessage(
+            `Are you sure you want to delete ${event.object.filesystemPath.name}'s ${event.eventNamePretty} event? Restoring events can be difficult by hand.`,
+            { modal: true },
+            'Delete'
+        );
+
+        if (output === 'Delete') {
+            await boss.writeCommand(
+                new utilities.DeleteEvent(event.object.filesystemPath.name, event.eventFname)
+            );
+
+            if (boss.hasError()) {
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+            } else {
+                await boss.writeCommand(new serializationCommands.SerializationCommand());
+                if (boss.hasError()) {
+                    vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+                } else {
+                    GmItem.ITEM_PROVIDER?.refresh(event.object);
+                }
+            }
+        }
+    }
+}
+
+// Right now, we're only supporting these until submenus are stabilized in October 2020.
+export enum LimitedGmEvent {
+    Create = 'Create',
+    CleanUp = 'CleanUp',
+    Step = 'Step',
+    StepEnd = 'StepEnd',
+    Draw = 'Draw',
+    DrawEnd = 'DrawEnd',
+    RoomStart = 'RoomStart',
+    RoomEnd = 'RoomEnd',
+}
+
+function ev_to_fname(gm_e: LimitedGmEvent): string {
+    switch (gm_e) {
+        case LimitedGmEvent.Create:
+            return 'Create_0';
+        case LimitedGmEvent.Step:
+            return 'Step_0';
+        case LimitedGmEvent.StepEnd:
+            return 'Step_2';
+        case LimitedGmEvent.Draw:
+            return 'Draw_0';
+        case LimitedGmEvent.DrawEnd:
+            return 'Draw_73';
+        case LimitedGmEvent.RoomStart:
+            return 'Other_4';
+        case LimitedGmEvent.RoomEnd:
+            return 'Other_5';
+        case LimitedGmEvent.CleanUp:
+            return 'CleanUp_0';
+    }
+}
+
+function fname_to_ev(fname: string): LimitedGmEvent | undefined {
+    switch (fname) {
+        case 'Create_0':
+            return LimitedGmEvent.Create;
+        case 'Step_0':
+            return LimitedGmEvent.Step;
+        case 'Step_2':
+            return LimitedGmEvent.StepEnd;
+        case 'Draw_0':
+            return LimitedGmEvent.Draw;
+        case 'Draw_73':
+            return LimitedGmEvent.DrawEnd;
+        case 'Other_4':
+            return LimitedGmEvent.RoomStart;
+        case 'Other_5':
+            return LimitedGmEvent.RoomEnd;
+        case 'CleanUp_0':
+            return LimitedGmEvent.CleanUp;
+        default:
+            return undefined;
     }
 }
