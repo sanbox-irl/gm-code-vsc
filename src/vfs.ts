@@ -1,12 +1,4 @@
-import {
-    YyBoss,
-    vfsCommands as vfsCommand,
-    resourceCommands,
-    Resource,
-    utilities,
-    serializationCommands as serializationCommand,
-    serializationCommands,
-} from 'yy-boss-ts';
+import { YyBoss, vfsCommand, resourceCommand, Resource, utilities } from 'yy-boss-ts';
 import { FilesystemPath, SerializedDataDefault, SerializedDataValue } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
 import { YypBossError } from 'yy-boss-ts/out/error';
@@ -38,7 +30,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                     let object = resourceElement as ObjectItem;
 
                     let data = await this.yyBoss.writeCommand(
-                        new resourceCommands.GetAssociatedDataResource(Resource.Object, parent.label, false)
+                        new resourceCommand.GetAssociatedDataResource(Resource.Object, parent.label, false)
                     );
 
                     if (this.yyBoss.hasError() === false) {
@@ -201,7 +193,7 @@ export class FolderItem extends GmItem {
 
                     return undefined;
                 } else {
-                    return `Error:${YypBossError.error(yyBoss.error.error)}`;
+                    return `Error:${YypBossError.error(yyBoss.error)}`;
                 }
             },
         });
@@ -230,7 +222,7 @@ export class FolderItem extends GmItem {
         }
 
         if (success) {
-            await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+            await yyBoss.writeCommand(new SerializationCommand());
             if (yyBoss.error === undefined) {
                 GmItem.ITEM_PROVIDER?.refresh(folder);
             }
@@ -248,15 +240,15 @@ export class FolderItem extends GmItem {
             await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
 
             if (yyBoss.hasError() == false) {
-                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+                await yyBoss.writeCommand(new SerializationCommand());
 
                 if (yyBoss.hasError()) {
-                    console.log(yyBoss.error.error.type);
+                    console.log(yyBoss.error.type);
                 } else {
                     GmItem.ITEM_PROVIDER?.refresh(folder.parent);
                 }
             } else {
-                console.log(yyBoss.error?.error.type);
+                console.log(yyBoss.error?.type);
             }
         }
     }
@@ -274,7 +266,7 @@ export class FolderItem extends GmItem {
             await yyBoss.writeCommand(new vfsCommand.RemoveFolderVfs(folder.viewPath, true));
 
             if (yyBoss.error === undefined) {
-                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+                await yyBoss.writeCommand(new SerializationCommand());
                 if (yyBoss.error === undefined) {
                     GmItem.ITEM_PROVIDER?.refresh(folder.parent);
                 }
@@ -318,7 +310,7 @@ export abstract class ResourceItem extends GmItem {
         if (new_resource_name !== undefined && new_resource_name.length > 0) {
             const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
             await yyBoss.writeCommand(
-                new resourceCommands.RenameResource(
+                new resourceCommand.RenameResource(
                     resourceItem.resource,
                     resourceItem.filesystemPath.name,
                     new_resource_name
@@ -326,12 +318,12 @@ export abstract class ResourceItem extends GmItem {
             );
 
             if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
             } else {
-                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+                await yyBoss.writeCommand(new SerializationCommand());
 
                 if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
                 } else {
                     GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
                 }
@@ -350,16 +342,16 @@ export abstract class ResourceItem extends GmItem {
 
         if (output === 'Delete') {
             await yyBoss.writeCommand(
-                new resourceCommands.RemoveResource(resourceItem.resource, resourceItem.filesystemPath.name)
+                new resourceCommand.RemoveResource(resourceItem.resource, resourceItem.filesystemPath.name)
             );
 
             if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
             } else {
-                await yyBoss.writeCommand(new serializationCommand.SerializationCommand());
+                await yyBoss.writeCommand(new SerializationCommand());
 
                 if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
                 } else {
                     GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
                 }
@@ -389,23 +381,23 @@ export abstract class ResourceItem extends GmItem {
         }
 
         let new_resource = await yyBoss.writeCommand(
-            new utilities.CreateCommand(resource, new_resource_name, {
+            new utilities.CreateResourceYyFile(resource, new_resource_name, {
                 name: parent.label,
                 path: parent.viewPath,
             })
         );
 
         await yyBoss.writeCommand(
-            new resourceCommands.AddResource(resource, new_resource.resource, new SerializedDataDefault())
+            new resourceCommand.AddResource(resource, new_resource.resource, new SerializedDataDefault())
         );
 
         if (yyBoss.hasError()) {
-            vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+            vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
         } else {
             await yyBoss.writeCommand(new SerializationCommand());
 
             if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error.error)}`);
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
             } else {
                 GmItem.ITEM_PROVIDER?.refresh(parent);
 
@@ -476,11 +468,11 @@ export class ObjectItem extends ResourceItem {
         );
 
         if (boss.hasError()) {
-            vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+            vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
         } else {
-            await boss.writeCommand(new serializationCommands.SerializationCommand());
+            await boss.writeCommand(new SerializationCommand());
             if (boss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
             } else {
                 GmItem.ITEM_PROVIDER?.refresh(objectItem.parent);
             }
@@ -489,7 +481,7 @@ export class ObjectItem extends ResourceItem {
 
     static async getEventCapabilities(yyBoss: YyBoss, objectName: string): Promise<LimitedGmEvent[]> {
         let data = await yyBoss.writeCommand(
-            new resourceCommands.GetAssociatedDataResource(Resource.Object, objectName, false)
+            new resourceCommand.GetAssociatedDataResource(Resource.Object, objectName, false)
         );
 
         let events = data.associatedData as SerializedDataValue;
@@ -578,11 +570,11 @@ export class EventItem extends GmItem {
             );
 
             if (boss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
             } else {
-                await boss.writeCommand(new serializationCommands.SerializationCommand());
+                await boss.writeCommand(new SerializationCommand());
                 if (boss.hasError()) {
-                    vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error.error)}`);
+                    vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
                 } else {
                     GmItem.ITEM_PROVIDER?.refresh(event.object);
                 }

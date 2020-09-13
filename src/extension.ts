@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { YY_BOSS_PATH, WD } from './config';
-import { LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
+import { ClosureStatus, LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
-import { Resource } from 'yy-boss-ts';
+import { Resource, utilities } from 'yy-boss-ts';
 
 let YY_BOSS: YyBoss | undefined = undefined;
 
@@ -31,6 +31,10 @@ export async function activate(context: vscode.ExtensionContext) {
         if (yyp_path !== undefined) {
             let log_path = path.join(context.logPath, 'log.log');
 
+            console.log(`Gm Code server is ${YY_BOSS_PATH}`);
+            console.log(`Logging is ${log_path}`);
+            console.log(`Working Directory is ${context.globalStoragePath}`);
+
             // let yy_boss_path = await YyBoss.fetchYyBoss(YY_BOSS_DIR);
             const [status, yyp_boss] = await YyBoss.create(
                 YY_BOSS_PATH,
@@ -40,9 +44,21 @@ export async function activate(context: vscode.ExtensionContext) {
             );
 
             if (status.success) {
-                console.log('successful parse');
+                const yy_boss = yyp_boss as YyBoss;
+                yy_boss.attachUnexpectedShutdownCallback(async () => {
+                    let clicked_submit = await vscode.window.showErrorMessage(
+                        'Well, this is awkward. The backing Gm Code server has crashed. Please check the Output console for the current log, and submit a bug report.',
+                        'Submit a bug report'
+                    );
 
-                let yy_boss = yyp_boss as YyBoss;
+                    if (clicked_submit == 'Submit a bug report') {
+                        await vscode.commands.executeCommand(
+                            'vscode.open',
+                            vscode.Uri.parse('https://github.com/sanbox-irl/gm-code-vsc/issues')
+                        );
+                    }
+                });
+
                 return yy_boss;
             } else {
                 console.log(JSON.stringify(status));
@@ -125,7 +141,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export async function deactivate(): Promise<void> {
-    if (YY_BOSS === undefined || YY_BOSS.hasClosed) {
+    if (YY_BOSS === undefined || YY_BOSS.closureStatus !== ClosureStatus.Open) {
         return;
     }
 

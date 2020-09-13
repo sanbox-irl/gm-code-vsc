@@ -20,7 +20,8 @@
   - [x] Remove Event
 - [-] Infrastructure
   - [x] Reload Workspace
-  - [ ] Better Crash Reports and Logging
+  - [x] Better Crash Reports and Logging
   - [x] Make sure we support workspaces
   - [ ] Reveal Api
   - [ ] Create Script, Object, Folder at Root
+  - [ ] Make sure Fetch works
