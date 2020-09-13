@@ -42,17 +42,20 @@
             {
                 "command": "gmVfs.createScript",
                 "title": "New Script",
-                "category": "Create"
+                "category": "Create",
+                "icon": "$(new-file)"
             },
             {
                 "command": "gmVfs.createObject",
                 "title": "New Object",
-                "category": "Create"
+                "category": "Create",
+                "icon": "$(symbol-class)"
             },
             {
                 "command": "gmVfs.createFolder",
                 "title": "New Folder",
-                "category": "Create"
+                "category": "Create",
+                "icon": "$(new-folder)"
             },
             {
                 "command": "gmVfs.deleteFolder",
@@ -127,6 +130,21 @@
             "view/title": [
                 {
                     "command": "gmVfs.reloadWorkspace",
+                    "when": "view == gmVfs",
+                    "group": "navigation"
+                },
+                {
+                    "command": "gmVfs.createScript",
+                    "when": "view == gmVfs",
+                    "group": "navigation"
+                },
+                {
+                    "command": "gmVfs.createObject",
+                    "when": "view == gmVfs",
+                    "group": "navigation"
+                },
+                {
+                    "command": "gmVfs.createFolder",
                     "when": "view == gmVfs",
                     "group": "navigation"
                 }

@@ -19,9 +19,15 @@
   - [x] Add Event
   - [x] Remove Event
 - [-] Infrastructure
-  - [x] Reload Workspace
   - [x] Better Crash Reports and Logging
   - [x] Make sure we support workspaces
-  - [ ] Reveal Api
-  - [ ] Create Script, Object, Folder at Root
+  - [x] Reveal Api (**unimplemented**)
+  - [-] Root Options
+    - [x] Script
+    - [x] Folder
+    - [x] Object
+    - [x] Reload
+    - [x] Collapse All
+  - [ ] Sort alphanumerically
   - [ ] Make sure Fetch works
+  - [ ] Basic set up for the extension (readme, some docs, etc)

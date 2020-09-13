@@ -1,16 +1,19 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { YY_BOSS_PATH, WD } from './config';
+import { YY_BOSS_PATH } from './config';
 import { ClosureStatus, LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
-import { Resource, utilities } from 'yy-boss-ts';
+import { Resource } from 'yy-boss-ts';
+import { ProjectMetadata } from 'yy-boss-ts/out/core';
+import { stat } from 'fs';
+import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
 
 let YY_BOSS: YyBoss | undefined = undefined;
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-    async function preboot(): Promise<YyBoss | undefined> {
+    async function preboot(): Promise<[YyBoss, ProjectMetadata] | undefined> {
         const paths = vscode.workspace.workspaceFolders as readonly vscode.WorkspaceFolder[];
         let yyp_path: string | undefined = undefined;
 
@@ -59,7 +62,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     }
                 });
 
-                return yy_boss;
+                return [yy_boss, (status as StartupOutputSuccess).projectMetadata];
             } else {
                 console.log(JSON.stringify(status));
                 return undefined;
@@ -69,24 +72,39 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    let yyBoss = await preboot();
-    if (yyBoss === undefined) {
+    let output = await preboot();
+    if (output === undefined) {
         return;
     }
 
+    let [yyBoss, projectMetadata] = output;
+
     const item_provider = new vfs.GmItemProvider(yyBoss);
     vfs.GmItem.ITEM_PROVIDER = item_provider;
+    vfs.GmItem.PROJECT_METADATA = projectMetadata;
     YY_BOSS = yyBoss;
 
     context.subscriptions.push(
+        vscode.window.createTreeView('gmVfs', {
+            treeDataProvider: item_provider,
+            showCollapseAll: true,
+        })
+    );
+    context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
+            console.log('reloading workspace');
             await deactivate();
 
-            let yyBoss = await preboot();
+            let output = await preboot();
 
-            if (yyBoss === undefined) {
+            if (output === undefined) {
                 vscode.window.showErrorMessage(`Error: Could not reload gm-code-server`);
             } else {
+                let [yyBoss, projectMetadata] = output;
+
+                console.log('reloaded workspace');
+
+                vfs.GmItem.PROJECT_METADATA = projectMetadata;
                 let provider = vfs.GmItem.ITEM_PROVIDER as vfs.GmItemProvider;
                 provider.yyBoss = yyBoss;
                 YY_BOSS = yyBoss;
@@ -96,7 +114,6 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    context.subscriptions.push(vscode.window.registerTreeDataProvider('gmVfs', item_provider));
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.openScript', vfs.ScriptItem.onOpenScript)
     );
