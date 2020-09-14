@@ -21,8 +21,7 @@
 - [-] Infrastructure
   - [x] Better Crash Reports and Logging
   - [x] Make sure we support workspaces
-  - [x] Reveal Api (**unimplemented**)
-  - [-] Root Options
+  - [x] Root Options
     - [x] Script
     - [x] Folder
     - [x] Object
@@ -31,3 +30,9 @@
   - [x] Sort alphanumerically
   - [x] Make sure Fetch works
   - [-] Basic set up for the extension (readme, some docs, etc)
+  - [-] Triage
+    - [x] Object Events appear to be broke on Edit (serious)
+    - [ ] Reloading the project creates a crash 🔴
+    - [ ] Need to Goto event when it is opened
+    - [ ] Reveal Api
+    - [x] Better Ordering

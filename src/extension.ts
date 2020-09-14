@@ -4,7 +4,6 @@ import { ClosureStatus, LogToFile, YyBoss, YyBossDownloadStatus } from 'yy-boss-
 import * as vfs from './vfs';
 import { Resource } from 'yy-boss-ts';
 import { ProjectMetadata } from 'yy-boss-ts/out/core';
-import { stat } from 'fs';
 import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
 
 let YY_BOSS: YyBoss | undefined = undefined;
@@ -123,10 +122,11 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
             console.log('reloading workspace');
-            await deactivate();
+            if (YY_BOSS !== undefined && YY_BOSS.closureStatus === ClosureStatus.Open) {
+                await YY_BOSS.shutdown();
+            }
 
             let output = await preboot();
-
             if (output === undefined) {
                 vscode.window.showErrorMessage(`Error: Could not reload gm-code-server`);
             } else {
@@ -135,11 +135,10 @@ export async function activate(context: vscode.ExtensionContext) {
                 console.log('reloaded workspace');
 
                 vfs.GmItem.PROJECT_METADATA = projectMetadata;
-                let provider = vfs.GmItem.ITEM_PROVIDER as vfs.GmItemProvider;
-                provider.yyBoss = yyBoss;
+                item_provider.yyBoss = yyBoss;
                 YY_BOSS = yyBoss;
 
-                provider.refresh(undefined);
+                item_provider.refresh(undefined);
             }
         })
     );

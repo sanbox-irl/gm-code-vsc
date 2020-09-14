@@ -36,7 +36,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                     let object = resourceElement as ObjectItem;
 
                     let data = await this.yyBoss.writeCommand(
-                        new resourceCommand.GetAssociatedDataResource(Resource.Object, parent.label, false)
+                        new resourceCommand.GetAssociatedDataResource(Resource.Object, parent.label, true)
                     );
 
                     if (this.yyBoss.hasError() === false) {
@@ -52,11 +52,12 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                         const capabilities = Object.values(LimitedGmEvent);
                         let output: GmItem[] = [];
 
-                        for (let i = 0; i < betterNames.eventNames.length; i++) {
-                            const name = betterNames.eventNames[i];
-                            output.push(new EventItem(name, object, fileNames[i], parent));
+                        for (const [fName, prettyName] of betterNames.eventNames) {
+                            let name = prettyName;
 
-                            const parse = fname_to_ev(fileNames[i]);
+                            output.push(new EventItem(name, object, fName, parent));
+
+                            const parse = fname_to_ev(fName);
                             if (parse !== undefined) {
                                 const idx = capabilities.indexOf(parse);
                                 if (idx !== -1) {
@@ -377,6 +378,8 @@ export abstract class ResourceItem extends GmItem {
             async validateInput(input: string): Promise<string | undefined> {
                 let response = await yyBoss.writeCommand(new util.CanUseResourceName(input));
 
+                console.log(JSON.stringify(yyBoss.error, undefined, 4));
+
                 if (response.nameIsValid) {
                     return undefined;
                 } else {
@@ -496,7 +499,7 @@ export class ObjectItem extends ResourceItem {
 
     static async getEventCapabilities(yyBoss: YyBoss, objectName: string): Promise<LimitedGmEvent[]> {
         let data = await yyBoss.writeCommand(
-            new resourceCommand.GetAssociatedDataResource(Resource.Object, objectName, false)
+            new resourceCommand.GetAssociatedDataResource(Resource.Object, objectName, true)
         );
 
         let events = data.associatedData as SerializedDataValue;
@@ -589,7 +592,7 @@ export class EventItem extends GmItem {
                 if (boss.hasError()) {
                     vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
                 } else {
-                    GmItem.ITEM_PROVIDER?.refresh(event.object);
+                    GmItem.ITEM_PROVIDER?.refresh(event.object.parent);
                 }
             }
         }
