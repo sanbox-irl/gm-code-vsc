@@ -29,10 +29,10 @@
     - [x] Collapse All
   - [x] Sort alphanumerically
   - [x] Make sure Fetch works
-  - [-] Basic set up for the extension (readme, some docs, etc)
-  - [-] Triage
+  - [x] Basic set up for the extension (readme, some docs, etc)
+  - [x] Triage
     - [x] Object Events appear to be broke on Edit (serious)
-    - [ ] Reloading the project creates a crash 🔴
-    - [ ] Need to Goto event when it is opened
-    - [ ] Reveal Api
+    - [x] Reloading the project creates a crash
+    - [x] Need to Goto event when it is opened
+    - [x] Reveal Api (**pushed back to 0.2.0**)
     - [x] Better Ordering

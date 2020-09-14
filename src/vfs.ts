@@ -239,29 +239,29 @@ export class FolderItem extends GmItem {
         }
     }
 
-    public static async OnRenameFolder(folder: FolderItem) {
-        const new_folder_name = await vscode.window.showInputBox({
-            value: folder.label,
-            prompt: 'New Folder Name',
-        });
+    // public static async OnRenameFolder(folder: FolderItem) {
+    //     const new_folder_name = await vscode.window.showInputBox({
+    //         value: folder.label,
+    //         prompt: 'New Folder Name',
+    //     });
 
-        if (new_folder_name !== undefined) {
-            const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-            await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
+    //     if (new_folder_name !== undefined) {
+    //         const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+    //         await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
 
-            if (yyBoss.hasError() == false) {
-                await yyBoss.writeCommand(new SerializationCommand());
+    //         if (yyBoss.hasError()) {
+    //             vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+    //         } else {
+    //             await yyBoss.writeCommand(new SerializationCommand());
 
-                if (yyBoss.hasError()) {
-                    console.log(yyBoss.error.type);
-                } else {
-                    GmItem.ITEM_PROVIDER?.refresh(folder.parent);
-                }
-            } else {
-                console.log(yyBoss.error?.type);
-            }
-        }
-    }
+    //             if (yyBoss.hasError()) {
+    //                 vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+    //             } else {
+    //                 GmItem.ITEM_PROVIDER?.refresh(folder.parent);
+    //             }
+    //         }
+    //     }
+    // }
 
     public static async onDeleteFolder(folder: FolderItem) {
         let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
@@ -373,12 +373,10 @@ export abstract class ResourceItem extends GmItem {
         let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
 
         const new_resource_name = await vscode.window.showInputBox({
-            value: `New ${resource}`,
+            value: `${resource}`,
             prompt: `Create a new ${resource}`,
             async validateInput(input: string): Promise<string | undefined> {
                 let response = await yyBoss.writeCommand(new util.CanUseResourceName(input));
-
-                console.log(JSON.stringify(yyBoss.error, undefined, 4));
 
                 if (response.nameIsValid) {
                     return undefined;
@@ -492,6 +490,7 @@ export class ObjectItem extends ResourceItem {
             if (boss.hasError()) {
                 vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
             } else {
+                EventItem.onOpenEvent(objectItem.filesystemPath.name, ev_to_fname(eventType));
                 GmItem.ITEM_PROVIDER?.refresh(objectItem.parent);
             }
         }

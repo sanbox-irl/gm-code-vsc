@@ -8,8 +8,6 @@ import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
 
 let YY_BOSS: YyBoss | undefined = undefined;
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
     async function preboot(): Promise<[YyBoss, ProjectMetadata] | undefined> {
         const paths = vscode.workspace.workspaceFolders as readonly vscode.WorkspaceFolder[];
@@ -119,11 +117,13 @@ export async function activate(context: vscode.ExtensionContext) {
             showCollapseAll: true,
         })
     );
+
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
             console.log('reloading workspace');
             if (YY_BOSS !== undefined && YY_BOSS.closureStatus === ClosureStatus.Open) {
-                await YY_BOSS.shutdown();
+                // do not await this
+                YY_BOSS.shutdown();
             }
 
             let output = await preboot();
@@ -155,6 +155,10 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.createFolder', vfs.FolderItem.onCreateFolder)
     );
+    // for 0.2.0
+    // context.subscriptions.push(
+    //     vscode.commands.registerCommand('gmVfs.renameFolder', vfs.FolderItem.OnRenameFolder)
+    // );
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.deleteFolder', vfs.FolderItem.onDeleteFolder)
     );
@@ -186,10 +190,10 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 }
 
-export async function deactivate(): Promise<void> {
+export async function deactivate() {
     if (YY_BOSS === undefined || YY_BOSS.closureStatus !== ClosureStatus.Open) {
         return;
     }
 
-    await YY_BOSS.shutdown();
+    YY_BOSS.shutdown();
 }
