@@ -16,9 +16,3 @@ bower_components
 dist/**/*
 out/**/*
 
-# Ignore Vsc settings...
-.vscode/
-
-# Ignore our Config file...
-src/config.ts
-bin/
