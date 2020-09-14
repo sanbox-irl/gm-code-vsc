@@ -273,6 +273,6 @@
         "@types/vscode": "^1.45.0"
     },
     "dependencies": {
-        "yy-boss-ts": "file:../yy-boss-ts"
+        "yy-boss-ts": "^0.1.3"
     }
 }
