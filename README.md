@@ -8,8 +8,8 @@ This is a *highly* alpha Gms2 extension for Visual Studio Code. It provides supp
 
 This extension is under active development. The current goals for 0.2.0 are:
 
-- TextMate grammer for Gms2
-- `gmake`, to compile and run GameMaker projects from VSC.
+- TextMate grammer for excellent Gms2 colorization
+- `adam`, to compile and run GameMaker projects from VSC.
 - Autocomplete for built in Gms2 functions
 - Shader Support
 - Some generalized resource support
