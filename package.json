@@ -269,6 +269,6 @@
         "typescript": "^3.9.7"
     },
     "dependencies": {
-        "yy-boss-ts": "0.1.5"
+        "yy-boss-ts": "file:../yy-boss-ts"
     }
 }

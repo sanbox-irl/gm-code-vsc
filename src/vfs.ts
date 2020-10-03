@@ -3,12 +3,14 @@ import {
     FilesystemPath,
     ProjectMetadata,
     SerializedDataDefault,
+    SerializedDataFilepath,
     SerializedDataValue,
     ViewPath,
 } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
 import { YypBossError } from 'yy-boss-ts/out/error';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
+import * as fs from 'fs';
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     constructor(public yyBoss: YyBoss) {}
@@ -29,7 +31,6 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                     return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
                 case GmItemType.Resource:
                     let resourceElement = parent as ResourceItem;
-                    // we probably will never get here!
                     if (resourceElement.resource !== Resource.Object) {
                         return [];
                     }
@@ -40,8 +41,10 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                     );
 
                     if (this.yyBoss.hasError() === false) {
-                        let events = data.associatedData as SerializedDataValue;
-                        let assoc_data = JSON.parse(events.data);
+                        let fpath = data.associatedData as SerializedDataFilepath;
+                        let events = fs.readFileSync(fpath.data);
+                        let assoc_data = JSON.parse(events.toString());
+                        fs.unlinkSync(fpath.data);
 
                         let fileNames = Object.getOwnPropertyNames(assoc_data);
                         let betterNames = await this.yyBoss.writeCommand(
@@ -501,8 +504,10 @@ export class ObjectItem extends ResourceItem {
             new resourceCommand.GetAssociatedDataResource(Resource.Object, objectName, true)
         );
 
-        let events = data.associatedData as SerializedDataValue;
-        let assoc_data = JSON.parse(events.data);
+        let fpath = data.associatedData as SerializedDataFilepath;
+        let events = fs.readFileSync(fpath.data);
+        let assoc_data = JSON.parse(events.toString());
+        fs.unlinkSync(fpath.data);
 
         let fileNames = Object.values(LimitedGmEvent);
 
