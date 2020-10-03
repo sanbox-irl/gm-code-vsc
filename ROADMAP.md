@@ -1,5 +1,14 @@
 # ROADMAP
 
+## v0.2.0
+
+- [x] Bugfixes
+- [ ] integrate Adam
+- [ ] add types for all non-script files
+- [ ] Shader support? could be pushed back
+- [ ] Sprite viewing support? also definitely pushed back
+- [ ] reveal API
+
 ## v0.1.0
 
 - [x] Folders
