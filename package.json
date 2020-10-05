@@ -256,7 +256,21 @@
                     "group": "delete"
                 }
             ]
-        }
+        },
+        "taskDefinitions": [
+            {
+                "type": "adam",
+                "required": [
+                    "task"
+                ],
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "The adam task to run"
+                    }
+                }
+            }
+        ]
     },
     "main": "out/extension.js",
     "scripts": {
@@ -265,6 +279,7 @@
         "watch": "tsc -watch -p ./"
     },
     "devDependencies": {
+        "@types/node": "^14.11.2",
         "@types/vscode": "^1.45.0",
         "typescript": "^3.9.7"
     },

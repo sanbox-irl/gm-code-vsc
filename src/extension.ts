@@ -5,13 +5,15 @@ import * as vfs from './vfs';
 import { Resource } from 'yy-boss-ts';
 import { ProjectMetadata } from 'yy-boss-ts/out/core';
 import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
+import { AdamTaskProvider } from './tasks';
 
 let YY_BOSS: YyBoss | undefined = undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-    async function preboot(): Promise<[YyBoss, ProjectMetadata] | undefined> {
+    async function preboot(): Promise<[vscode.WorkspaceFolder, YyBoss, ProjectMetadata] | undefined> {
         const paths = vscode.workspace.workspaceFolders as readonly vscode.WorkspaceFolder[];
         let yyp_path: string | undefined = undefined;
+        let f_workspace_folder: vscode.WorkspaceFolder | undefined = undefined;
 
         // try to find a yyp
         for (const workspace_folder of paths) {
@@ -19,6 +21,7 @@ export async function activate(context: vscode.ExtensionContext) {
             for (const [fpath, ftype] of files) {
                 if (ftype == vscode.FileType.File && fpath.endsWith('.yyp')) {
                     yyp_path = path.join(workspace_folder.uri.fsPath, fpath);
+                    f_workspace_folder = workspace_folder;
                     break;
                 }
             }
@@ -89,7 +92,11 @@ export async function activate(context: vscode.ExtensionContext) {
                     }
                 });
 
-                return [yy_boss, (status as StartupOutputSuccess).projectMetadata];
+                return [
+                    f_workspace_folder as vscode.WorkspaceFolder,
+                    yy_boss,
+                    (status as StartupOutputSuccess).projectMetadata,
+                ];
             } else {
                 console.log(JSON.stringify(status));
                 return undefined;
@@ -104,8 +111,9 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    let [yyBoss, projectMetadata] = output;
+    let [workspaceFolder, yyBoss, projectMetadata] = output;
 
+    //#region  Vfs
     const item_provider = new vfs.GmItemProvider(yyBoss);
     vfs.GmItem.ITEM_PROVIDER = item_provider;
     vfs.GmItem.PROJECT_METADATA = projectMetadata;
@@ -117,7 +125,6 @@ export async function activate(context: vscode.ExtensionContext) {
             showCollapseAll: true,
         })
     );
-
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
             console.log('reloading workspace');
@@ -130,7 +137,7 @@ export async function activate(context: vscode.ExtensionContext) {
             if (output === undefined) {
                 vscode.window.showErrorMessage(`Error: Could not reload gm-code-server`);
             } else {
-                let [yyBoss, projectMetadata] = output;
+                let [_, yyBoss, projectMetadata] = output;
 
                 console.log('reloaded workspace');
 
@@ -188,6 +195,41 @@ export async function activate(context: vscode.ExtensionContext) {
             })
         );
     });
+    //#endregion
+    //#region Task Providers
+    const taskProvider = vscode.tasks.registerTaskProvider(
+        AdamTaskProvider.TaskType,
+        new AdamTaskProvider(workspaceFolder, 'adam')
+    );
+
+    // let taskPromise: Thenable<vscode.Task[]> | undefined = undefined;
+    // ('gmcode', {
+    //     provideTasks: () => {
+    //         if (!taskPromise) {
+    //             taskPromise = getRakeTasks();
+    //         }
+    //         return taskPromise;
+    //     },
+    //     resolveTask(_task: vscode.Task): vscode.Task | undefined {
+    //         const task = _task.definition.task;
+    //         // A Rake task consists of a task and an optional file as specified in RakeTaskDefinition
+    //         // Make sure that this looks like a Rake task by checking that there is a task.
+    //         if (task) {
+    //             // resolveTask requires that the same definition object be used.
+    //             const definition: RakeTaskDefinition = <any>_task.definition;
+    //             return new vscode.Task(
+    //                 definition,
+    //                 definition.task,
+    //                 'rake',
+    //                 new vscode.ShellExecution(`rake ${definition.task}`)
+    //             );
+    //         }
+    //         return undefined;
+    //     },
+    // });
+    // context.subscriptions.push(taskProvider);
+
+    //#endregion
 }
 
 export async function deactivate() {
