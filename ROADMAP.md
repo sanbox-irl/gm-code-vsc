@@ -3,11 +3,15 @@
 ## v0.2.0
 
 - [x] Bugfixes
-- [ ] integrate Adam
+- [-] integrate Adam
+  - [-] Tasks
+  - [ ] Check for adam on the PATH
+  - [ ] Download adam
 - [x] add types for all non-script files
 - [ ] Shader support? could be pushed back
-- [-] Sprite viewing support? also definitely pushed back
 - [ ] reveal API
+- [ ] Add an excellent roadmap
+- [ ] add a not excellent, but good enough, user guide.
 
 ## v0.1.0
 

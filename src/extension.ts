@@ -1,16 +1,17 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ClosureStatus, LogToFile, YyBoss, YyBossDownloadStatus } from 'yy-boss-ts/out/yy_boss';
+import { ClosureStatus, LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
 import { Resource } from 'yy-boss-ts';
 import { ProjectMetadata } from 'yy-boss-ts/out/core';
 import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
 import { AdamTaskProvider } from './tasks';
+import { Fetch } from 'yy-boss-ts/out/fetch';
 
 let YY_BOSS: YyBoss | undefined = undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-    async function preboot(): Promise<[vscode.WorkspaceFolder, YyBoss, ProjectMetadata] | undefined> {
+    async function preboot(): Promise<[vscode.WorkspaceFolder, string, YyBoss, ProjectMetadata] | undefined> {
         const paths = vscode.workspace.workspaceFolders as readonly vscode.WorkspaceFolder[];
         let yyp_path: string | undefined = undefined;
         let f_workspace_folder: vscode.WorkspaceFolder | undefined = undefined;
@@ -39,36 +40,35 @@ export async function activate(context: vscode.ExtensionContext) {
             let override: string | undefined = vscode.workspace
                 .getConfiguration('gmCode')
                 .get('overrideServerPath');
-
             let boss_path: string;
 
             // do we not have an override here at all? sometimes it returns null?
             if (override === undefined || override === null) {
-                let boss_download_status = await YyBoss.downloadStatus(context.globalStoragePath);
+                boss_path = await Fetch.fetchYyBoss(context.globalStoragePath, async old_version => {
+                    let needs_update =
+                        old_version === undefined ||
+                        old_version.compare(Fetch.YY_BOSS_CURRENT_VERSION) === -1;
 
-                if (boss_download_status == YyBossDownloadStatus.Success) {
-                    // this will just return the subpath actually, which is pretty messy!
-                    boss_path = await YyBoss.fetchYyBoss(context.globalStoragePath);
-                } else {
-                    let output = await vscode.window.showInformationMessage(
-                        'Gm Code needs a backend, local server. Would you like to Download it?',
-                        'Download',
-                        'Cancel'
-                    );
+                    if (needs_update) {
+                        let output = await vscode.window.showInformationMessage(
+                            'Gm Code needs a backend, local server. Would you like to Download it?',
+                            'Download',
+                            'Cancel'
+                        );
 
-                    if (output !== 'Download') {
-                        return undefined;
+                        return output === 'Download';
+                    } else {
+                        return false;
                     }
-
-                    boss_path = await YyBoss.fetchYyBoss(context.globalStoragePath);
-                }
+                });
             } else {
                 boss_path = override;
             }
 
-            console.log(`Gm Code server is ${boss_path}`);
+            // check if Adam is on the path, and if it's current enough...
+            const adam_path = await Fetch.fetchAdam(context.globalStoragePath);
 
-            // let yy_boss_path = await YyBoss.fetchYyBoss(YY_BOSS_DIR);
+            console.log(`Gm Code server is ${boss_path}`);
             const [status, yyp_boss] = await YyBoss.create(
                 boss_path,
                 yyp_path,
@@ -94,6 +94,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
                 return [
                     f_workspace_folder as vscode.WorkspaceFolder,
+                    adam_path,
                     yy_boss,
                     (status as StartupOutputSuccess).projectMetadata,
                 ];
@@ -111,7 +112,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    let [workspaceFolder, yyBoss, projectMetadata] = output;
+    let [workspaceFolder, adam, yyBoss, projectMetadata] = output;
 
     //#region  Vfs
     const item_provider = new vfs.GmItemProvider(yyBoss);
@@ -137,7 +138,7 @@ export async function activate(context: vscode.ExtensionContext) {
             if (output === undefined) {
                 vscode.window.showErrorMessage(`Error: Could not reload gm-code-server`);
             } else {
-                let [_, yyBoss, projectMetadata] = output;
+                let [_, _adam, yyBoss, projectMetadata] = output;
 
                 console.log('reloaded workspace');
 
@@ -199,8 +200,9 @@ export async function activate(context: vscode.ExtensionContext) {
     //#region Task Providers
     const taskProvider = vscode.tasks.registerTaskProvider(
         AdamTaskProvider.TaskType,
-        new AdamTaskProvider(workspaceFolder, 'adam')
+        new AdamTaskProvider(workspaceFolder, adam)
     );
+    context.subscriptions.push(taskProvider);
 
     // let taskPromise: Thenable<vscode.Task[]> | undefined = undefined;
     // ('gmcode', {
