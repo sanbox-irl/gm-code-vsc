@@ -126,6 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
             showCollapseAll: true,
         })
     );
+
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
             console.log('reloading workspace');
@@ -163,10 +164,9 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.createFolder', vfs.FolderItem.onCreateFolder)
     );
-    // for 0.2.0
-    // context.subscriptions.push(
-    //     vscode.commands.registerCommand('gmVfs.renameFolder', vfs.FolderItem.OnRenameFolder)
-    // );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('gmVfs.renameFolder', vfs.FolderItem.OnRenameFolder)
+    );
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.deleteFolder', vfs.FolderItem.onDeleteFolder)
     );
@@ -203,33 +203,6 @@ export async function activate(context: vscode.ExtensionContext) {
         new AdamTaskProvider(workspaceFolder, adam)
     );
     context.subscriptions.push(taskProvider);
-
-    // let taskPromise: Thenable<vscode.Task[]> | undefined = undefined;
-    // ('gmcode', {
-    //     provideTasks: () => {
-    //         if (!taskPromise) {
-    //             taskPromise = getRakeTasks();
-    //         }
-    //         return taskPromise;
-    //     },
-    //     resolveTask(_task: vscode.Task): vscode.Task | undefined {
-    //         const task = _task.definition.task;
-    //         // A Rake task consists of a task and an optional file as specified in RakeTaskDefinition
-    //         // Make sure that this looks like a Rake task by checking that there is a task.
-    //         if (task) {
-    //             // resolveTask requires that the same definition object be used.
-    //             const definition: RakeTaskDefinition = <any>_task.definition;
-    //             return new vscode.Task(
-    //                 definition,
-    //                 definition.task,
-    //                 'rake',
-    //                 new vscode.ShellExecution(`rake ${definition.task}`)
-    //             );
-    //         }
-    //         return undefined;
-    //     },
-    // });
-    // context.subscriptions.push(taskProvider);
 
     //#endregion
 }

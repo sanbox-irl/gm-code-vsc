@@ -103,6 +103,11 @@
                 "category": "Delete"
             },
             {
+                "command": "gmVfs.renameFolder",
+                "title": "Rename",
+                "category": "Delete"
+            },
+            {
                 "command": "gmVfs.deleteEvent",
                 "title": "Delete",
                 "category": "Delete"

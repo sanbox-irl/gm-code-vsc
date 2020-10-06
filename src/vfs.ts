@@ -242,29 +242,29 @@ export class FolderItem extends GmItem {
         }
     }
 
-    // public static async OnRenameFolder(folder: FolderItem) {
-    //     const new_folder_name = await vscode.window.showInputBox({
-    //         value: folder.label,
-    //         prompt: 'New Folder Name',
-    //     });
+    public static async OnRenameFolder(folder: FolderItem) {
+        const new_folder_name = await vscode.window.showInputBox({
+            value: folder.label,
+            prompt: 'New Folder Name',
+        });
 
-    //     if (new_folder_name !== undefined) {
-    //         const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-    //         await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
+        if (new_folder_name !== undefined) {
+            const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+            await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
 
-    //         if (yyBoss.hasError()) {
-    //             vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
-    //         } else {
-    //             await yyBoss.writeCommand(new SerializationCommand());
+            if (yyBoss.hasError()) {
+                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+            } else {
+                await yyBoss.writeCommand(new SerializationCommand());
 
-    //             if (yyBoss.hasError()) {
-    //                 vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
-    //             } else {
-    //                 GmItem.ITEM_PROVIDER?.refresh(folder.parent);
-    //             }
-    //         }
-    //     }
-    // }
+                if (yyBoss.hasError()) {
+                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                } else {
+                    GmItem.ITEM_PROVIDER?.refresh(folder.parent);
+                }
+            }
+        }
+    }
 
     public static async onDeleteFolder(folder: FolderItem) {
         let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;

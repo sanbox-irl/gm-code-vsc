@@ -9,7 +9,7 @@
   - [x] Download adam
 - [x] add types for all non-script files
 - [ ] Shader support
-- [ ] reveal API
+- [-] reveal API
 - [ ] Add an excellent changelog
 - [ ] add a not excellent, but good enough, user guide.
 
