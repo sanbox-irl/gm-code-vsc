@@ -4,7 +4,6 @@ import {
     ProjectMetadata,
     SerializedDataDefault,
     SerializedDataFilepath,
-    SerializedDataValue,
     ViewPath,
 } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
