@@ -5,12 +5,12 @@
 - [x] Bugfixes
 - [-] integrate Adam
   - [-] Tasks
-  - [ ] Check for adam on the PATH
-  - [ ] Download adam
+  - [x] Check for adam on the PATH
+  - [x] Download adam
 - [x] add types for all non-script files
-- [ ] Shader support? could be pushed back
+- [ ] Shader support
 - [ ] reveal API
-- [ ] Add an excellent roadmap
+- [ ] Add an excellent changelog
 - [ ] add a not excellent, but good enough, user guide.
 
 ## v0.1.0
