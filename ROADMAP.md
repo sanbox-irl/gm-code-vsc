@@ -3,13 +3,12 @@
 ## v0.2.0
 
 - [x] Bugfixes
-- [-] integrate Adam
-  - [-] Tasks
+- [x] integrate Adam
+  - [x] Tasks
   - [x] Check for adam on the PATH
   - [x] Download adam
 - [x] add types for all non-script files
 - [ ] Shader support
-- [-] reveal API
 - [ ] Add an excellent changelog
 - [ ] add a not excellent, but good enough, user guide.
 
