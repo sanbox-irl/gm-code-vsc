@@ -449,9 +449,7 @@ export abstract class ResourceItem extends GmItem {
                 // we immediately reveal a script...
                 if (resource === Resource.Script) {
                     let path = await yyBoss.writeCommand(new util.ScriptGmlPath(new_resource_name));
-
-                    let document = await vscode.workspace.openTextDocument(path.requestedPath);
-                    vscode.window.showTextDocument(document);
+                    vscode.commands.executeCommand('gmVfs.open', [vscode.Uri.file(path.requestedPath)]);
                 }
             }
         }
@@ -473,7 +471,7 @@ export class ScriptItem extends ResourceItem {
         );
 
         this.command = {
-            command: 'vscode.open',
+            command: 'gmVfs.open',
             title: 'Open Script',
             arguments: [p],
             tooltip: 'Open this Script in the Editor',
@@ -481,14 +479,6 @@ export class ScriptItem extends ResourceItem {
     }
 
     iconPath = new vscode.ThemeIcon('file-code');
-
-    public static async onOpenScript(scriptName: string) {
-        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-        let path = await boss.writeCommand(new util.ScriptGmlPath(scriptName));
-
-        let document = await vscode.workspace.openTextDocument(path.requestedPath);
-        vscode.window.showTextDocument(document);
-    }
 }
 
 export class ObjectItem extends ResourceItem {
@@ -533,8 +523,7 @@ export class ObjectItem extends ResourceItem {
                     )
                 );
 
-                let new_item = await vscode.workspace.openTextDocument(uri);
-                vscode.window.showTextDocument(new_item);
+                vscode.commands.executeCommand('gmVfs.open', [uri]);
                 GmItem.ITEM_PROVIDER?.refresh(objectItem.parent);
             }
         }
@@ -650,7 +639,7 @@ export class ShaderFileItem extends GmItem {
         );
 
         this.command = {
-            command: 'vscode.open',
+            command: 'gmVfs.open',
             title: 'Open Shader File',
             arguments: [this.resourceUri],
             tooltip: 'Open this Shader in the Editor',
@@ -690,7 +679,7 @@ export class EventItem extends GmItem {
         );
 
         this.command = {
-            command: 'vscode.open',
+            command: 'gmVfs.open',
             title: 'Open Event',
             arguments: [uri],
             tooltip: 'Open this Event in the Editor',

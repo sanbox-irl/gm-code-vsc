@@ -153,6 +153,13 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
+        vscode.commands.registerCommand('gmVfs.open', async (uri: vscode.Uri) => {
+            let new_item = await vscode.workspace.openTextDocument(uri);
+            vscode.window.showTextDocument(new_item);
+        })
+    );
+
+    context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.createScript', (parent: vfs.FolderItem) => {
             vfs.ResourceItem.onCreateResource(parent, Resource.Script);
         })
