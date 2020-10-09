@@ -4,15 +4,17 @@ import {
     ProjectMetadata,
     SerializedDataDefault,
     SerializedDataFilepath,
+    SerializedDataValue,
     ViewPath,
 } from 'yy-boss-ts/out/core';
 import * as vscode from 'vscode';
 import { YypBossError } from 'yy-boss-ts/out/error';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
-    constructor(public yyBoss: YyBoss) {}
+    constructor(public yyBoss: YyBoss, public working_directory: string) {}
 
     async getChildren(parent?: GmItem | undefined): Promise<GmItem[]> {
         if (parent === undefined) {
@@ -30,52 +32,70 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                     return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
                 case GmItemType.Resource:
                     let resourceElement = parent as ResourceItem;
-                    if (resourceElement.resource !== Resource.Object) {
-                        return [];
-                    }
-                    let object = resourceElement as ObjectItem;
+                    switch (resourceElement.resource) {
+                        case Resource.Object: {
+                            let object = resourceElement as ObjectItem;
 
-                    let data = await this.yyBoss.writeCommand(
-                        new resourceCommand.GetAssociatedDataResource(Resource.Object, parent.label, true)
-                    );
+                            let data = await this.yyBoss.writeCommand(
+                                new resourceCommand.GetAssociatedDataResource(
+                                    Resource.Object,
+                                    parent.label,
+                                    true
+                                )
+                            );
 
-                    if (this.yyBoss.hasError() === false) {
-                        let fpath = data.associatedData as SerializedDataFilepath;
-                        let events = fs.readFileSync(fpath.data);
-                        let assoc_data = JSON.parse(events.toString());
-                        fs.unlinkSync(fpath.data);
+                            if (this.yyBoss.hasError() === false) {
+                                let fpath = data.associatedData as SerializedDataFilepath;
+                                let events = fs.readFileSync(fpath.data);
+                                let assoc_data = JSON.parse(events.toString());
+                                fs.unlinkSync(fpath.data);
 
-                        let fileNames = Object.getOwnPropertyNames(assoc_data);
-                        let betterNames = await this.yyBoss.writeCommand(
-                            new util.PrettyEventNames(fileNames)
-                        );
+                                let fileNames = Object.getOwnPropertyNames(assoc_data);
+                                let betterNames = await this.yyBoss.writeCommand(
+                                    new util.PrettyEventNames(fileNames)
+                                );
 
-                        // update capas
-                        const capabilities = Object.values(LimitedGmEvent);
-                        let output: GmItem[] = [];
+                                // update capas
+                                const capabilities = Object.values(LimitedGmEvent);
+                                let output: GmItem[] = [];
 
-                        for (const [fName, prettyName] of betterNames.eventNames) {
-                            let name = prettyName;
+                                for (const [fName, prettyName] of betterNames.eventNames) {
+                                    let name = prettyName;
 
-                            output.push(new EventItem(name, object, fName, parent));
+                                    output.push(new EventItem(name, object, fName, object));
 
-                            const parse = fname_to_ev(fName);
-                            if (parse !== undefined) {
-                                const idx = capabilities.indexOf(parse);
-                                if (idx !== -1) {
-                                    capabilities.splice(idx, 1);
+                                    const parse = fname_to_ev(fName);
+                                    if (parse !== undefined) {
+                                        const idx = capabilities.indexOf(parse);
+                                        if (idx !== -1) {
+                                            capabilities.splice(idx, 1);
+                                        }
+                                    }
                                 }
+
+                                object.updateContextValue(capabilities);
+
+                                return output;
+                            } else {
+                                console.log(JSON.stringify(this.yyBoss.error, undefined, 4));
+                                return [];
                             }
                         }
 
-                        object.updateContextValue(capabilities);
+                        case Resource.Shader: {
+                            let shader = resourceElement as ShaderItem;
 
-                        return output;
-                    } else {
-                        console.log(JSON.stringify(this.yyBoss.error, undefined, 4));
-                        return [];
+                            let frag_shad = new ShaderFileItem(ShaderKind.Frag, shader);
+                            let vert_shad = new ShaderFileItem(ShaderKind.Vertex, shader);
+
+                            return [frag_shad, vert_shad];
+                        }
+
+                        default:
+                            return [];
                     }
                 case GmItemType.Event:
+                case GmItemType.ShaderKind:
                     return [];
             }
         }
@@ -125,6 +145,10 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                     output.push(new ScriptItem(newFile.filesystemPath, parent));
                     break;
 
+                case Resource.Shader:
+                    output.push(new ShaderItem(newFile.filesystemPath, parent));
+                    break;
+
                 default:
                     output.push(
                         new OtherResource(
@@ -146,6 +170,7 @@ const enum GmItemType {
     Folder,
     Resource,
     Event,
+    ShaderKind,
 }
 
 export abstract class GmItem extends vscode.TreeItem {
@@ -438,16 +463,24 @@ export class ScriptItem extends ResourceItem {
 
     constructor(public readonly filesystemPath: FilesystemPath, public readonly parent: GmItem | undefined) {
         super(filesystemPath.name + '.gml', vscode.TreeItemCollapsibleState.None);
+
+        const p = vscode.Uri.file(
+            path.join(
+                GmItem.ITEM_PROVIDER?.working_directory as string,
+                path.dirname(filesystemPath.path),
+                filesystemPath.name + '.gml'
+            )
+        );
+
+        this.command = {
+            command: 'vscode.open',
+            title: 'Open Script',
+            arguments: [p],
+            tooltip: 'Open this Script in the Editor',
+        };
     }
 
     iconPath = new vscode.ThemeIcon('file-code');
-
-    command: vscode.Command = {
-        command: 'gmVfs.openScript',
-        title: 'Open Script',
-        arguments: [this.filesystemPath.name],
-        tooltip: 'Open this Script in the Editor',
-    };
 
     public static async onOpenScript(scriptName: string) {
         const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
@@ -478,7 +511,7 @@ export class ObjectItem extends ResourceItem {
         }
     }
 
-    iconPath = new vscode.ThemeIcon('symbol-class');
+    iconPath = new vscode.ThemeIcon('symbol-constructor');
 
     public static async onCreateEvent(objectItem: ObjectItem, eventType: LimitedGmEvent) {
         const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
@@ -492,7 +525,16 @@ export class ObjectItem extends ResourceItem {
             if (boss.hasError()) {
                 vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
             } else {
-                EventItem.onOpenEvent(objectItem.filesystemPath.name, ev_to_fname(eventType));
+                const uri = vscode.Uri.file(
+                    path.join(
+                        GmItem.ITEM_PROVIDER?.working_directory as string,
+                        path.dirname(objectItem.filesystemPath.path),
+                        ev_to_fname(eventType) + '.gml'
+                    )
+                );
+
+                let new_item = await vscode.workspace.openTextDocument(uri);
+                vscode.window.showTextDocument(new_item);
                 GmItem.ITEM_PROVIDER?.refresh(objectItem.parent);
             }
         }
@@ -524,6 +566,16 @@ export class ObjectItem extends ResourceItem {
     }
 }
 
+export class ShaderItem extends ResourceItem {
+    public readonly resource = Resource.Shader;
+
+    constructor(public readonly filesystemPath: FilesystemPath, public readonly parent: GmItem | undefined) {
+        super(filesystemPath.name, vscode.TreeItemCollapsibleState.Collapsed);
+    }
+
+    iconPath = new vscode.ThemeIcon('files');
+}
+
 export class OtherResource extends ResourceItem {
     constructor(
         public readonly filesystemPath: FilesystemPath,
@@ -531,10 +583,91 @@ export class OtherResource extends ResourceItem {
         public readonly resource: Resource,
         public readonly parent: GmItem | undefined
     ) {
-        super(filesystemPath.name, vscode.TreeItemCollapsibleState.Collapsed);
+        super(filesystemPath.name, vscode.TreeItemCollapsibleState.None);
+        switch (resource) {
+            case Resource.Sprite:
+                this.iconPath = new vscode.ThemeIcon('file-media');
+                break;
+            case Resource.Script:
+                this.iconPath = new vscode.ThemeIcon('file-code');
+                break;
+            case Resource.Object:
+                this.iconPath = new vscode.ThemeIcon('symbol-constructor');
+                break;
+            case Resource.Note:
+                this.iconPath = new vscode.ThemeIcon('pencil');
+                break;
+            case Resource.Shader:
+                this.iconPath = new vscode.ThemeIcon('file');
+                break;
+            case Resource.AnimationCurve:
+                this.iconPath = new vscode.ThemeIcon('pulse');
+                break;
+            case Resource.Extension:
+                this.iconPath = new vscode.ThemeIcon('extensions');
+                break;
+            case Resource.Font:
+                this.iconPath = new vscode.ThemeIcon('keyboard');
+
+                break;
+            case Resource.Path:
+                this.iconPath = new vscode.ThemeIcon('arrow-right');
+                break;
+            case Resource.Room:
+                this.iconPath = new vscode.ThemeIcon('window');
+                break;
+            case Resource.Sequence:
+                this.iconPath = new vscode.ThemeIcon('run-all');
+                break;
+            case Resource.Sound:
+                this.iconPath = new vscode.ThemeIcon('unmute');
+                break;
+            case Resource.TileSet:
+                this.iconPath = new vscode.ThemeIcon('primitive-square');
+                break;
+            case Resource.Timeline:
+                this.iconPath = new vscode.ThemeIcon('list-tree');
+                break;
+        }
     }
 
     iconPath = new vscode.ThemeIcon('file-media');
+}
+
+export class ShaderFileItem extends GmItem {
+    public gmItemType = GmItemType.ShaderKind;
+
+    constructor(shaderKind: ShaderKind, public readonly parent: ShaderItem) {
+        super(shaderKind == ShaderKind.Frag ? 'Fragment' : 'Vertex', vscode.TreeItemCollapsibleState.None);
+        let par_direct = path.dirname(parent.filesystemPath.path);
+
+        this.resourceUri = vscode.Uri.file(
+            path.join(
+                GmItem.ITEM_PROVIDER?.working_directory as string,
+                par_direct,
+                parent.filesystemPath.name + (shaderKind == ShaderKind.Frag ? '.fsh' : '.vsh')
+            )
+        );
+
+        this.command = {
+            command: 'vscode.open',
+            title: 'Open Shader File',
+            arguments: [this.resourceUri],
+            tooltip: 'Open this Shader in the Editor',
+        };
+    }
+
+    get tooltip(): string {
+        return this.label;
+    }
+
+    get id(): string {
+        return this.parent.filesystemPath.name + this.label;
+    }
+
+    contextValue = 'shaderFileItem';
+
+    iconPath = new vscode.ThemeIcon('file');
 }
 
 export class EventItem extends GmItem {
@@ -544,9 +677,24 @@ export class EventItem extends GmItem {
         private eventNamePretty: string,
         private object: ObjectItem,
         private eventFname: string,
-        public readonly parent: GmItem | undefined
+        public readonly parent: ObjectItem
     ) {
         super(eventNamePretty + '.gml', vscode.TreeItemCollapsibleState.None);
+
+        const uri = vscode.Uri.file(
+            path.join(
+                GmItem.ITEM_PROVIDER?.working_directory as string,
+                path.dirname(parent.filesystemPath.path),
+                eventFname + '.gml'
+            )
+        );
+
+        this.command = {
+            command: 'vscode.open',
+            title: 'Open Event',
+            arguments: [uri],
+            tooltip: 'Open this Event in the Editor',
+        };
     }
 
     get tooltip(): string {
@@ -559,22 +707,7 @@ export class EventItem extends GmItem {
 
     contextValue = 'eventItem';
 
-    command: vscode.Command = {
-        command: 'gmVfs.openEvent',
-        title: 'Open Event',
-        arguments: [this.object.filesystemPath.name, this.eventFname],
-        tooltip: 'Open this Event in the Editor',
-    };
-
-    iconPath = new vscode.ThemeIcon('file-code');
-
-    public static async onOpenEvent(object_name: string, event_fname: string) {
-        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-        let path = await boss.writeCommand(new util.EventGmlPath(object_name, event_fname));
-
-        let document = await vscode.workspace.openTextDocument(path.requestedPath);
-        vscode.window.showTextDocument(document);
-    }
+    iconPath = new vscode.ThemeIcon('list-selection');
 
     public static async onDeleteEvent(event: EventItem) {
         const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
@@ -600,6 +733,11 @@ export class EventItem extends GmItem {
             }
         }
     }
+}
+
+const enum ShaderKind {
+    Vertex,
+    Frag,
 }
 
 // Right now, we're only supporting these until submenus are stabilized in October 2020.

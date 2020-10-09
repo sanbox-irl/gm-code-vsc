@@ -115,7 +115,7 @@ export async function activate(context: vscode.ExtensionContext) {
     let [workspaceFolder, adam, yyBoss, projectMetadata] = output;
 
     //#region  Vfs
-    const item_provider = new vfs.GmItemProvider(yyBoss);
+    const item_provider = new vfs.GmItemProvider(yyBoss, workspaceFolder.uri.fsPath);
     vfs.GmItem.ITEM_PROVIDER = item_provider;
     vfs.GmItem.PROJECT_METADATA = projectMetadata;
     YY_BOSS = yyBoss;
@@ -153,14 +153,10 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.openScript', vfs.ScriptItem.onOpenScript)
-    );
-    context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.createScript', (parent: vfs.FolderItem) => {
             vfs.ResourceItem.onCreateResource(parent, Resource.Script);
         })
     );
-    context.subscriptions.push(vscode.commands.registerCommand('gmVfs.openEvent', vfs.EventItem.onOpenEvent));
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.createFolder', vfs.FolderItem.onCreateFolder)
     );

@@ -55,19 +55,9 @@
         },
         "commands": [
             {
-                "command": "gmVfs.openScript",
-                "title": "Open Script",
-                "category": "Open"
-            },
-            {
                 "command": "gmVfs.reloadWorkspace",
                 "title": "Reload",
                 "icon": "$(refresh)"
-            },
-            {
-                "command": "gmVfs.openEvent",
-                "title": "Open Event",
-                "category": "Open"
             },
             {
                 "command": "gmVfs.createScript",

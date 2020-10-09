@@ -8,8 +8,11 @@
   - [x] Check for adam on the PATH
   - [x] Download adam
 - [x] add types for all non-script files
-- [ ] Shader support
+- [x] Nicer icons
+- [x] Shader support
+- [ ] All event support
 - [ ] Add an excellent changelog
+- [ ] Object creation bug + events bug
 - [ ] add a not excellent, but good enough, user guide.
 
 ## v0.1.0
