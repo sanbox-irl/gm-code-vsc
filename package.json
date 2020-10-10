@@ -69,7 +69,7 @@
                 "command": "gmVfs.createObject",
                 "title": "New Object",
                 "category": "Create",
-                "icon": "$(symbol-class)"
+                "icon": "$(symbol-constructor)"
             },
             {
                 "command": "gmVfs.createFolder",
@@ -249,6 +249,11 @@
                     "command": "gmVfs.deleteEvent",
                     "when": "view == gmVfs && viewItem == eventItem",
                     "group": "delete"
+                },
+                {
+                    "submenu": "gmVfs.events",
+                    "group": "create",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
                 }
             ]
         },
@@ -264,6 +269,13 @@
                         "description": "The adam task to run"
                     }
                 }
+            }
+        ],
+        "submenus": [
+            {
+                "id": "gmVfs.events",
+                "label": "Add Event",
+                "icon": "$(list-selection)"
             }
         ]
     },
