@@ -191,14 +191,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // register all our event stuff -- this is a hack until October 2020 when we have submenus
     // when we will explore DIFFERENT hacks
-    Object.values(vfs.LimitedGmEvent).forEach(value => {
-        const cmd_name = `gmVfs.add${value}Event`;
+    for (const value of Object.values(vfs.GmEvent)) {
+        const cmd_name = `gmVfs.add${value}`;
         context.subscriptions.push(
             vscode.commands.registerCommand(cmd_name, (parent: vfs.ObjectItem) => {
                 vfs.ObjectItem.onCreateEvent(parent, value);
             })
         );
-    });
+    }
     //#endregion
     //#region Task Providers
     const taskProvider = vscode.tasks.registerTaskProvider(

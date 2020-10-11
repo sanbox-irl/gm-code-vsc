@@ -4,7 +4,7 @@
     "displayName": "Gm Code",
     "description": "Support for Gms2 projects.",
     "engines": {
-        "vscode": "^1.45.0"
+        "vscode": "^1.50.0"
     },
     "categories": [
         "Programming Languages"
@@ -33,26 +33,6 @@
         "workspaceContains:*.yyp"
     ],
     "contributes": {
-        "configuration": {
-            "title": "Gm Code",
-            "properties": {
-                "gmCode.overrideServerPath": {
-                    "description": "Override path to the gm-code backend server. Used to develop the extension.",
-                    "type": [
-                        "null",
-                        "string"
-                    ]
-                }
-            }
-        },
-        "views": {
-            "explorer": [
-                {
-                    "id": "gmVfs",
-                    "name": "Gm Code"
-                }
-            ]
-        },
         "commands": [
             {
                 "command": "gmVfs.reloadWorkspace",
@@ -103,181 +83,1093 @@
                 "category": "Delete"
             },
             {
-                "command": "gmVfs.addCreateEvent",
-                "title": "Add Create Event",
+                "command": "gmVfs.addDraw",
+                "title": "Draw",
                 "category": "Create",
-                "enablement": "view == gmVfs && viewItem =~ /canCreateEvent/"
+                "enablement": "view == gmVfs && viewItem =~ /canDrawEvent/"
             },
             {
-                "command": "gmVfs.addStepEvent",
-                "title": "Add Step Event",
+                "command": "gmVfs.addDrawBegin",
+                "title": "Draw Begin",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canDrawBeginEvent/"
+            },
+            {
+                "command": "gmVfs.addDrawEnd",
+                "title": "Draw End",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canDrawEndEvent/"
+            },
+            {
+                "command": "gmVfs.addDrawGui",
+                "title": "Draw GUI",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canDrawGuiEvent/"
+            },
+            {
+                "command": "gmVfs.addDrawGuiBegin",
+                "title": "Draw GUI Begin",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canDrawGuiBeginEvent/"
+            },
+            {
+                "command": "gmVfs.addDrawGuiEnd",
+                "title": "Draw GUI End",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canDrawGuiEndEvent/"
+            },
+            {
+                "command": "gmVfs.addPreDraw",
+                "title": "Pre-Draw",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canPreDrawEvent/"
+            },
+            {
+                "command": "gmVfs.addPostDraw",
+                "title": "Post-Draw",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canPostDrawEvent/"
+            },
+            {
+                "command": "gmVfs.addWindowResize",
+                "title": "Window Resize",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canWindowResizeEvent/"
+            },
+            {
+                "command": "gmVfs.addCleanUp",
+                "title": "CleanUp",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canCleanUpEvent/"
+            },
+            {
+                "command": "gmVfs.addStep",
+                "title": "Step",
                 "category": "Create",
                 "enablement": "view == gmVfs && viewItem =~ /canStepEvent/"
             },
             {
-                "command": "gmVfs.addStepEndEvent",
-                "title": "Add End Step Event",
-                "enablement": "view == gmVfs && viewItem =~ /canStepEndEvent/",
-                "category": "Create"
+                "command": "gmVfs.addBeginStep",
+                "title": "Begin Step",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canBeginStepEvent/"
             },
             {
-                "command": "gmVfs.addDrawEvent",
-                "title": "Add Draw Event",
-                "enablement": "view == gmVfs && viewItem =~ /canDrawEvent/",
-                "category": "Create"
+                "command": "gmVfs.addEndStep",
+                "title": "End Step",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canEndStepEvent/"
             },
             {
-                "command": "gmVfs.addDrawEndEvent",
-                "title": "Add Draw End Event",
-                "enablement": "view == gmVfs && viewItem =~ /canDrawEndEvent/",
-                "category": "Create"
+                "command": "gmVfs.addAlarm0",
+                "title": "Alarm 0",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm0Event/"
             },
             {
-                "command": "gmVfs.addRoomStartEvent",
-                "title": "Add Room Start Event",
-                "enablement": "view == gmVfs && viewItem =~ /canRoomStartEvent/",
-                "category": "Create"
+                "command": "gmVfs.addAlarm1",
+                "title": "Alarm 1",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm1Event/"
             },
             {
-                "command": "gmVfs.addRoomEndEvent",
-                "title": "Add Room End Event",
-                "enablement": "view == gmVfs && viewItem =~ /canRoomEndEvent/",
-                "category": "Create"
+                "command": "gmVfs.addAlarm2",
+                "title": "Alarm 2",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm2Event/"
             },
             {
-                "command": "gmVfs.addCleanUpEvent",
-                "title": "Add CleanUp Event",
-                "enablement": "view == gmVfs && viewItem =~ /canCleanUpEvent/",
-                "category": "Create"
+                "command": "gmVfs.addAlarm3",
+                "title": "Alarm 3",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm3Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm4",
+                "title": "Alarm 4",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm4Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm5",
+                "title": "Alarm 5",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm5Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm6",
+                "title": "Alarm 6",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm6Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm7",
+                "title": "Alarm 7",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm7Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm8",
+                "title": "Alarm 8",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm8Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm9",
+                "title": "Alarm 9",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm9Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm10",
+                "title": "Alarm 10",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm10Event/"
+            },
+            {
+                "command": "gmVfs.addAlarm11",
+                "title": "Alarm 11",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAlarm11Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideRoom",
+                "title": "Outside Room",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideRoomEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectBoundary",
+                "title": "Intersect Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectBoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addOutsideView0",
+                "title": "Outside View 0",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView0Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideView1",
+                "title": "Outside View 1",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView1Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideView2",
+                "title": "Outside View 2",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView2Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideView3",
+                "title": "Outside View 3",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView3Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideView4",
+                "title": "Outside View 4",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView4Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideView5",
+                "title": "Outside View 5",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView5Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideView6",
+                "title": "Outside View 6",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView6Event/"
+            },
+            {
+                "command": "gmVfs.addOutsideView7",
+                "title": "Outside View 7",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canOutsideView7Event/"
+            },
+            {
+                "command": "gmVfs.addIntersectView0Boundary",
+                "title": "Intersect View 0 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView0BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectView1Boundary",
+                "title": "Intersect View 1 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView1BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectView2Boundary",
+                "title": "Intersect View 2 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView2BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectView3Boundary",
+                "title": "Intersect View 3 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView3BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectView4Boundary",
+                "title": "Intersect View 4 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView4BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectView5Boundary",
+                "title": "Intersect View 5 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView5BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectView6Boundary",
+                "title": "Intersect View 6 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView6BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addIntersectView7Boundary",
+                "title": "Intersect View 7 Boundary",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canIntersectView7BoundaryEvent/"
+            },
+            {
+                "command": "gmVfs.addGameStart",
+                "title": "Game Start",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canGameStartEvent/"
+            },
+            {
+                "command": "gmVfs.addGameEnd",
+                "title": "Game End",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canGameEndEvent/"
+            },
+            {
+                "command": "gmVfs.addRoomStart",
+                "title": "Room Start",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canRoomStartEvent/"
+            },
+            {
+                "command": "gmVfs.addRoomEnd",
+                "title": "Room End",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canRoomEndEvent/"
+            },
+            {
+                "command": "gmVfs.addAnimationEnd",
+                "title": "Animation End",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAnimationEndEvent/"
+            },
+            {
+                "command": "gmVfs.addAnimationUpdate",
+                "title": "Animation Update",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAnimationUpdateEvent/"
+            },
+            {
+                "command": "gmVfs.addAnimationEvent",
+                "title": "Animation Event",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAnimationEventEvent/"
+            },
+            {
+                "command": "gmVfs.addPathEnded",
+                "title": "Path Ended",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canPathEndedEvent/"
+            },
+            {
+                "command": "gmVfs.addUserEvent0",
+                "title": "User Event 0",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent0Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent1",
+                "title": "User Event 1",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent1Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent2",
+                "title": "User Event 2",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent2Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent3",
+                "title": "User Event 3",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent3Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent4",
+                "title": "User Event 4",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent4Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent5",
+                "title": "User Event 5",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent5Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent6",
+                "title": "User Event 6",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent6Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent7",
+                "title": "User Event 7",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent7Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent8",
+                "title": "User Event 8",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent8Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent9",
+                "title": "User Event 9",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent9Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent10",
+                "title": "User Event 10",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent10Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent11",
+                "title": "User Event 11",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent11Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent12",
+                "title": "User Event 12",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent12Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent13",
+                "title": "User Event 13",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent13Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent14",
+                "title": "User Event 14",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent14Event/"
+            },
+            {
+                "command": "gmVfs.addUserEvent15",
+                "title": "User Event 15",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canUserEvent15Event/"
+            },
+            {
+                "command": "gmVfs.addBroadcastMessage",
+                "title": "Broadcast Message",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canBroadcastMessageEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncAudioPlayback",
+                "title": "Async - Audio Playback",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncAudioPlaybackEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncAudioRecording",
+                "title": "Async - Audio Recording",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncAudioRecordingEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncCloud",
+                "title": "Async - Cloud",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncCloudEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncDialog",
+                "title": "Async - Dialog",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncDialogEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncHttp",
+                "title": "Async - Http",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncHttpEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncInAppPurchase",
+                "title": "Async - In-App Purchase",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncInAppPurchaseEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncImageLoaded",
+                "title": "Async - Image Loaded",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncImageLoadedEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncNetworking",
+                "title": "Async - Networking",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncNetworkingEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncPushNotification",
+                "title": "Async - Push Notification",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncPushNotificationEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncSaveLoad",
+                "title": "Async - Save/Load",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncSaveLoadEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncSocial",
+                "title": "Async - Social",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncSocialEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncSteam",
+                "title": "Async - Steam",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncSteamEvent/"
+            },
+            {
+                "command": "gmVfs.addAsyncSystem",
+                "title": "Async - System",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canAsyncSystemEvent/"
+            },
+            {
+                "command": "gmVfs.addCreate",
+                "title": "Create",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canCreateEvent/"
+            },
+            {
+                "command": "gmVfs.addDestroy",
+                "title": "Destroy",
+                "category": "Create",
+                "enablement": "view == gmVfs && viewItem =~ /canDestroyEvent/"
             }
         ],
         "menus": {
             "view/title": [
                 {
-                    "command": "gmVfs.reloadWorkspace",
-                    "when": "view == gmVfs",
-                    "group": "navigation"
-                },
-                {
-                    "command": "gmVfs.createScript",
-                    "when": "view == gmVfs",
-                    "group": "navigation"
-                },
-                {
-                    "command": "gmVfs.createObject",
-                    "when": "view == gmVfs",
-                    "group": "navigation"
-                },
-                {
+                    "group": "navigation",
                     "command": "gmVfs.createFolder",
-                    "when": "view == gmVfs",
-                    "group": "navigation"
+                    "when": "view == gmVfs"
+                },
+                {
+                    "group": "navigation",
+                    "command": "gmVfs.createObject",
+                    "when": "view == gmVfs"
+                },
+                {
+                    "group": "navigation",
+                    "command": "gmVfs.createScript",
+                    "when": "view == gmVfs"
+                },
+                {
+                    "group": "navigation",
+                    "command": "gmVfs.reloadWorkspace",
+                    "when": "view == gmVfs"
                 }
             ],
             "view/item/context": [
                 {
-                    "command": "gmVfs.createScript",
-                    "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "create"
-                },
-                {
-                    "command": "gmVfs.createObject",
-                    "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "create"
-                },
-                {
-                    "command": "gmVfs.createFolder",
-                    "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "create"
-                },
-                {
-                    "command": "gmVfs.deleteFolder",
-                    "when": "view == gmVfs && viewItem == folderItem",
-                    "group": "delete"
-                },
-                {
-                    "command": "gmVfs.deleteResource",
-                    "when": "view == gmVfs && viewItem =~ /resourceItem/",
-                    "group": "delete"
-                },
-                {
-                    "command": "gmVfs.renameResource",
-                    "when": "view == gmVfs && viewItem =~ /resourceItem/",
-                    "group": "delete"
-                },
-                {
-                    "command": "gmVfs.addCreateEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@0"
-                },
-                {
-                    "command": "gmVfs.addStepEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@1"
-                },
-                {
-                    "command": "gmVfs.addStepEndEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@2"
-                },
-                {
-                    "command": "gmVfs.addDrawEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@3"
-                },
-                {
-                    "command": "gmVfs.addDrawEndEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@4"
-                },
-                {
-                    "command": "gmVfs.addRoomStartEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@5"
-                },
-                {
-                    "command": "gmVfs.addRoomEndEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@6"
-                },
-                {
-                    "command": "gmVfs.addCleanUpEvent",
-                    "when": "view == gmVfs && viewItem =~ /objectItem/",
-                    "group": "create@7"
-                },
-                {
-                    "command": "gmVfs.deleteEvent",
-                    "when": "view == gmVfs && viewItem == eventItem",
-                    "group": "delete"
-                },
-                {
-                    "submenu": "gmVfs.events",
                     "group": "create",
+                    "command": "gmVfs.createFolder",
+                    "when": "view == gmVfs && viewItem == folderItem"
+                },
+                {
+                    "group": "create",
+                    "command": "gmVfs.createObject",
+                    "when": "view == gmVfs && viewItem == folderItem"
+                },
+                {
+                    "group": "create",
+                    "command": "gmVfs.createScript",
+                    "when": "view == gmVfs && viewItem == folderItem"
+                },
+                {
+                    "group": "create@0",
+                    "command": "gmVfs.addCreate",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@1",
+                    "command": "gmVfs.addDestroy",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "command": "gmVfs.addCleanUp",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "delete",
+                    "command": "gmVfs.deleteEvent",
+                    "when": "view == gmVfs && viewItem == eventItem"
+                },
+                {
+                    "group": "delete",
+                    "command": "gmVfs.deleteFolder",
+                    "when": "view == gmVfs && viewItem == folderItem"
+                },
+                {
+                    "group": "delete",
+                    "command": "gmVfs.deleteResource",
+                    "when": "view == gmVfs && viewItem =~ /resourceItem/"
+                },
+                {
+                    "group": "delete",
+                    "command": "gmVfs.renameResource",
+                    "when": "view == gmVfs && viewItem =~ /resourceItem/"
+                },
+                {
+                    "group": "create@3",
+                    "submenu": "gmVfs.Step",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@4",
+                    "submenu": "gmVfs.Alarm",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@5",
+                    "submenu": "gmVfs.Draw",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@5",
+                    "submenu": "gmVfs.Other",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@6",
+                    "submenu": "gmVfs.Asynchronous",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                }
+            ],
+            "gmVfs.Alarm": [
+                {
+                    "group": "create@0",
+                    "command": "gmVfs.addAlarm0",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@1",
+                    "command": "gmVfs.addAlarm1",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@10",
+                    "command": "gmVfs.addAlarm10",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@11",
+                    "command": "gmVfs.addAlarm11",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "command": "gmVfs.addAlarm2",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@3",
+                    "command": "gmVfs.addAlarm3",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@4",
+                    "command": "gmVfs.addAlarm4",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@5",
+                    "command": "gmVfs.addAlarm5",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@6",
+                    "command": "gmVfs.addAlarm6",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@7",
+                    "command": "gmVfs.addAlarm7",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@8",
+                    "command": "gmVfs.addAlarm8",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@9",
+                    "command": "gmVfs.addAlarm9",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                }
+            ],
+            "gmVfs.Asynchronous": [
+                {
+                    "group": "create@0",
+                    "command": "gmVfs.addAsyncAudioPlayback",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@1",
+                    "command": "gmVfs.addAsyncAudioRecording",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@10",
+                    "command": "gmVfs.addAsyncSocial",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@11",
+                    "command": "gmVfs.addAsyncSteam",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@12",
+                    "command": "gmVfs.addAsyncSystem",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "command": "gmVfs.addAsyncCloud",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@3",
+                    "command": "gmVfs.addAsyncDialog",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@4",
+                    "command": "gmVfs.addAsyncHttp",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@5",
+                    "command": "gmVfs.addAsyncInAppPurchase",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@6",
+                    "command": "gmVfs.addAsyncImageLoaded",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@7",
+                    "command": "gmVfs.addAsyncNetworking",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@8",
+                    "command": "gmVfs.addAsyncPushNotification",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@9",
+                    "command": "gmVfs.addAsyncSaveLoad",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                }
+            ],
+            "gmVfs.Draw": [
+                {
+                    "group": "drawmain@0",
+                    "command": "gmVfs.addDraw",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "drawmain@3",
+                    "command": "gmVfs.addDrawGui",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "drawpost@1",
+                    "command": "gmVfs.addDrawBegin",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "drawpost@2",
+                    "command": "gmVfs.addDrawEnd",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "drawpost@4",
+                    "command": "gmVfs.addDrawGuiBegin",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "drawpost@5",
+                    "command": "gmVfs.addDrawGuiEnd",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "prepost@6",
+                    "command": "gmVfs.addPreDraw",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "prepost@7",
+                    "command": "gmVfs.addPostDraw",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "window@8",
+                    "command": "gmVfs.addWindowResize",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                }
+            ],
+            "gmVfs.Other": [
+                {
+                    "group": "create@0",
+                    "command": "gmVfs.addOutsideRoom",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@1",
+                    "command": "gmVfs.addIntersectBoundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@11",
+                    "command": "gmVfs.addBroadcastMessage",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "command": "gmVfs.addGameStart",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@3",
+                    "command": "gmVfs.addGameEnd",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@4",
+                    "command": "gmVfs.addRoomStart",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@5",
+                    "command": "gmVfs.addRoomEnd",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@6",
+                    "command": "gmVfs.addAnimationEnd",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@7",
+                    "command": "gmVfs.addAnimationUpdate",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@8",
+                    "command": "gmVfs.addAnimationEvent",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@9",
+                    "command": "gmVfs.addPathEnded",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@10",
+                    "submenu": "gmVfs.UserEvents",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "submenu": "gmVfs.Views",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                }
+            ],
+            "gmVfs.Step": [
+                {
+                    "group": "create@0",
+                    "command": "gmVfs.addStep",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@1",
+                    "command": "gmVfs.addBeginStep",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "command": "gmVfs.addEndStep",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                }
+            ],
+            "gmVfs.UserEvents": [
+                {
+                    "group": "create@0",
+                    "command": "gmVfs.addUserEvent0",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@1",
+                    "command": "gmVfs.addUserEvent1",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@10",
+                    "command": "gmVfs.addUserEvent10",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@11",
+                    "command": "gmVfs.addUserEvent11",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@12",
+                    "command": "gmVfs.addUserEvent12",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@13",
+                    "command": "gmVfs.addUserEvent13",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@14",
+                    "command": "gmVfs.addUserEvent14",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@15",
+                    "command": "gmVfs.addUserEvent15",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "command": "gmVfs.addUserEvent2",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@3",
+                    "command": "gmVfs.addUserEvent3",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@4",
+                    "command": "gmVfs.addUserEvent4",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@5",
+                    "command": "gmVfs.addUserEvent5",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@6",
+                    "command": "gmVfs.addUserEvent6",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@7",
+                    "command": "gmVfs.addUserEvent7",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@8",
+                    "command": "gmVfs.addUserEvent8",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@9",
+                    "command": "gmVfs.addUserEvent9",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                }
+            ],
+            "gmVfs.Views": [
+                {
+                    "group": "create@0",
+                    "command": "gmVfs.addOutsideView0",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@1",
+                    "command": "gmVfs.addOutsideView1",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@10",
+                    "command": "gmVfs.addIntersectView2Boundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@11",
+                    "command": "gmVfs.addIntersectView3Boundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@12",
+                    "command": "gmVfs.addIntersectView4Boundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@13",
+                    "command": "gmVfs.addIntersectView5Boundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@14",
+                    "command": "gmVfs.addIntersectView6Boundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@15",
+                    "command": "gmVfs.addIntersectView7Boundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@2",
+                    "command": "gmVfs.addOutsideView2",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@3",
+                    "command": "gmVfs.addOutsideView3",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@4",
+                    "command": "gmVfs.addOutsideView4",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@5",
+                    "command": "gmVfs.addOutsideView5",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@6",
+                    "command": "gmVfs.addOutsideView6",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@7",
+                    "command": "gmVfs.addOutsideView7",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@8",
+                    "command": "gmVfs.addIntersectView0Boundary",
+                    "when": "view == gmVfs && viewItem =~ /objectItem/"
+                },
+                {
+                    "group": "create@9",
+                    "command": "gmVfs.addIntersectView1Boundary",
                     "when": "view == gmVfs && viewItem =~ /objectItem/"
                 }
             ]
         },
+        "submenus": [
+            {
+                "id": "gmVfs.Draw",
+                "label": "Draw"
+            },
+            {
+                "id": "gmVfs.Step",
+                "label": "Step"
+            },
+            {
+                "id": "gmVfs.Alarm",
+                "label": "Alarm"
+            },
+            {
+                "id": "gmVfs.Other",
+                "label": "Other"
+            },
+            {
+                "id": "gmVfs.Asynchronous",
+                "label": "Asynchronous"
+            },
+            {
+                "id": "gmVfs.Views",
+                "label": "Views"
+            },
+            {
+                "id": "gmVfs.UserEvents",
+                "label": "User Events"
+            }
+        ],
         "taskDefinitions": [
             {
-                "type": "adam",
+                "properties": {
+                    "task": {
+                        "description": "The adam task to run",
+                        "type": "string"
+                    }
+                },
                 "required": [
                     "task"
                 ],
-                "properties": {
-                    "task": {
-                        "type": "string",
-                        "description": "The adam task to run"
-                    }
-                }
+                "type": "adam"
             }
         ],
-        "submenus": [
-            {
-                "id": "gmVfs.events",
-                "label": "Add Event",
-                "icon": "$(list-selection)"
-            }
-        ]
+        "configuration": {
+            "properties": {
+                "gmCode.overrideServerPath": {
+                    "description": "Override path to the gm-code backend server. Used to develop the extension.",
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                }
+            },
+            "title": "Gm Code"
+        },
+        "views": {
+            "explorer": [
+                {
+                    "id": "gmVfs",
+                    "name": "Gm Code"
+                }
+            ]
+        }
     },
     "main": "out/extension.js",
     "scripts": {
