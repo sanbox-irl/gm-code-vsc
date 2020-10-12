@@ -12,8 +12,8 @@
 - [x] Shader support
 - [x] All event support
 - [x] Add an excellent changelog
-- [ ] add a not excellent, but good enough, user guide.
-- [ ] fix logging
+- [x] add a not excellent, but good enough, user guide.
+- [x] fix logging
 
 ## v0.1.0
 
