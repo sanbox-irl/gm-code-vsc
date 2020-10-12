@@ -51,7 +51,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
                     if (needs_update) {
                         let output = await vscode.window.showInformationMessage(
-                            'Gm Code needs a backend, local server. Would you like to Download it?',
+                            `Yy-boss ${Fetch.YY_BOSS_CURRENT_VERSION} has released. Would you like to download it?`,
                             'Download',
                             'Cancel'
                         );
@@ -66,7 +66,22 @@ export async function activate(context: vscode.ExtensionContext) {
             }
 
             // check if Adam is on the path, and if it's current enough...
-            const adam_path = await Fetch.fetchAdam(context.globalStoragePath);
+            const adam_path = await Fetch.fetchAdam(context.globalStoragePath, async old_version => {
+                let needs_update =
+                    old_version === undefined || old_version.compare(Fetch.ADAM_CURRENT_VERSION) === -1;
+
+                if (needs_update) {
+                    let output = await vscode.window.showInformationMessage(
+                        `adam ${Fetch.ADAM_CURRENT_VERSION}, required to compile Gms2 projects, has released. Would you like to download it?`,
+                        'Download',
+                        'Cancel'
+                    );
+
+                    return output === 'Download';
+                } else {
+                    return false;
+                }
+            });
 
             console.log(`Gm Code server is ${boss_path}`);
             const [status, yyp_boss] = await YyBoss.create(
