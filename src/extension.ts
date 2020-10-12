@@ -34,8 +34,8 @@ export async function activate(context: vscode.ExtensionContext) {
         if (yyp_path !== undefined) {
             let log_path = path.join(context.logPath, 'log.log');
 
-            console.log(`Logging is ${log_path}`);
-            console.log(`Working Directory is ${context.globalStoragePath}`);
+            outputChannel.appendLine(`Logging is ${log_path}`);
+            outputChannel.appendLine(`Working Directory is ${context.globalStoragePath}`);
 
             let override: string | undefined = vscode.workspace
                 .getConfiguration('gmCode')
@@ -83,7 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 }
             });
 
-            console.log(`Gm Code server is ${boss_path}`);
+            outputChannel.appendLine(`Gm Code server is ${boss_path}`);
             const [status, yyp_boss] = await YyBoss.create(
                 boss_path,
                 yyp_path,
@@ -114,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     (status as StartupOutputSuccess).projectMetadata,
                 ];
             } else {
-                console.log(JSON.stringify(status));
+                outputChannel.appendLine(JSON.stringify(status));
                 return undefined;
             }
         } else {
@@ -122,6 +122,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     }
 
+    let outputChannel = vscode.window.createOutputChannel('gm-code');
     let output = await preboot();
     if (output === undefined) {
         return;
@@ -130,7 +131,7 @@ export async function activate(context: vscode.ExtensionContext) {
     let [workspaceFolder, adam, yyBoss, projectMetadata] = output;
 
     //#region  Vfs
-    const item_provider = new vfs.GmItemProvider(yyBoss, workspaceFolder.uri.fsPath);
+    const item_provider = new vfs.GmItemProvider(yyBoss, workspaceFolder.uri.fsPath, outputChannel);
     vfs.GmItem.ITEM_PROVIDER = item_provider;
     vfs.GmItem.PROJECT_METADATA = projectMetadata;
     YY_BOSS = yyBoss;
@@ -144,7 +145,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
-            console.log('reloading workspace');
+            outputChannel.appendLine('reloading workspace');
             if (YY_BOSS !== undefined && YY_BOSS.closureStatus === ClosureStatus.Open) {
                 // do not await this
                 YY_BOSS.shutdown();
@@ -156,7 +157,7 @@ export async function activate(context: vscode.ExtensionContext) {
             } else {
                 let [_, _adam, yyBoss, projectMetadata] = output;
 
-                console.log('reloaded workspace');
+                outputChannel.appendLine('reloaded workspace');
 
                 vfs.GmItem.PROJECT_METADATA = projectMetadata;
                 item_provider.yyBoss = yyBoss;

@@ -1,31 +1,32 @@
 import { YyBoss, vfsCommand, resourceCommand, Resource, util } from 'yy-boss-ts';
-import {
-    FilesystemPath,
-    ProjectMetadata,
-    SerializedDataDefault,
-    SerializedDataFilepath,
-    SerializedDataValue,
-    ViewPath,
-} from 'yy-boss-ts/out/core';
+import { FilesystemPath, SerializedDataDefault, SerializedDataFilepath, ViewPath } from 'yy-boss-ts';
 import * as vscode from 'vscode';
 import { YypBossError } from 'yy-boss-ts/out/error';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Command, ProjectMetadata } from 'yy-boss-ts/out/core';
+import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
+
+const ERROR_MESSAGE = `YyBoss has encountered a serious error. You should restart the server, and report an error on the Github page at https://github.com/sanbox-irl/gm-code-vsc/issues/new`;
 
 export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
-    constructor(public yyBoss: YyBoss, public working_directory: string) {}
+    constructor(
+        public yyBoss: YyBoss,
+        public working_directory: string,
+        public outputChannel: vscode.OutputChannel
+    ) {}
 
     async getChildren(parent?: GmItem | undefined): Promise<GmItem[]> {
         if (parent === undefined) {
-            let result = await this.yyBoss.writeCommand(new vfsCommand.GetFullVfs());
+            let result = await this.writeCommand(new vfsCommand.GetFullVfs());
 
             return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
         } else {
             switch (parent.gmItemType) {
                 case GmItemType.Folder:
                     let folderElement = parent as FolderItem;
-                    let result = await this.yyBoss.writeCommand(
+                    let result = await this.writeCommand(
                         new vfsCommand.GetFolderVfs(folderElement.viewPath)
                     );
 
@@ -36,7 +37,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                         case Resource.Object: {
                             let object = resourceElement as ObjectItem;
 
-                            let data = await this.yyBoss.writeCommand(
+                            let data = await this.writeCommand(
                                 new resourceCommand.GetAssociatedDataResource(
                                     Resource.Object,
                                     parent.label,
@@ -51,7 +52,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                                 fs.unlinkSync(fpath.data);
 
                                 let fileNames = Object.getOwnPropertyNames(assoc_data);
-                                let betterNames = await this.yyBoss.writeCommand(
+                                let betterNames = await this.writeCommand(
                                     new util.PrettyEventNames(fileNames)
                                 );
 
@@ -77,7 +78,9 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
 
                                 return output;
                             } else {
-                                console.log(JSON.stringify(this.yyBoss.error, undefined, 4));
+                                this.outputChannel.appendLine(
+                                    JSON.stringify(this.yyBoss.error, undefined, 4)
+                                );
                                 return [];
                             }
                         }
@@ -163,6 +166,11 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         }
 
         return output;
+    }
+
+    public writeCommand<T extends Command>(command: T): Promise<CommandToOutput<T>> {
+        this.outputChannel.appendLine(JSON.stringify(command));
+        return this.yyBoss.writeCommand(command);
     }
 }
 
@@ -277,12 +285,16 @@ export class FolderItem extends GmItem {
             await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
 
             if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                vscode.window.showErrorMessage(ERROR_MESSAGE);
+                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+                GmItem.ITEM_PROVIDER?.outputChannel.show();
             } else {
                 await yyBoss.writeCommand(new SerializationCommand());
 
                 if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                    vscode.window.showErrorMessage(ERROR_MESSAGE);
+                    GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+                    GmItem.ITEM_PROVIDER?.outputChannel.show();
                 } else {
                     GmItem.ITEM_PROVIDER?.refresh(folder.parent);
                 }
@@ -355,12 +367,16 @@ export abstract class ResourceItem extends GmItem {
             );
 
             if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                vscode.window.showErrorMessage(ERROR_MESSAGE);
+                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+                GmItem.ITEM_PROVIDER?.outputChannel.show();
             } else {
                 await yyBoss.writeCommand(new SerializationCommand());
 
                 if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                    vscode.window.showErrorMessage(ERROR_MESSAGE);
+                    GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+                    GmItem.ITEM_PROVIDER?.outputChannel.show();
                 } else {
                     GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
                 }
@@ -383,12 +399,16 @@ export abstract class ResourceItem extends GmItem {
             );
 
             if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                vscode.window.showErrorMessage(ERROR_MESSAGE);
+                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+                GmItem.ITEM_PROVIDER?.outputChannel.show();
             } else {
                 await yyBoss.writeCommand(new SerializationCommand());
 
                 if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                    vscode.window.showErrorMessage(ERROR_MESSAGE);
+                    GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+                    GmItem.ITEM_PROVIDER?.outputChannel.show();
                 } else {
                     GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
                 }
@@ -437,12 +457,16 @@ export abstract class ResourceItem extends GmItem {
         );
 
         if (yyBoss.hasError()) {
-            vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+            vscode.window.showErrorMessage(ERROR_MESSAGE);
+            GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+            GmItem.ITEM_PROVIDER?.outputChannel.show();
         } else {
             await yyBoss.writeCommand(new SerializationCommand());
 
             if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(yyBoss.error)}`);
+                vscode.window.showErrorMessage(ERROR_MESSAGE);
+                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
+                GmItem.ITEM_PROVIDER?.outputChannel.show();
             } else {
                 GmItem.ITEM_PROVIDER?.refresh(parent);
 
@@ -509,11 +533,15 @@ export class ObjectItem extends ResourceItem {
         await boss.writeCommand(new util.CreateEvent(objectItem.filesystemPath.name, ev_to_fname(eventType)));
 
         if (boss.hasError()) {
-            vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
+            vscode.window.showErrorMessage(ERROR_MESSAGE);
+            GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(boss.error));
+            GmItem.ITEM_PROVIDER?.outputChannel.show();
         } else {
             await boss.writeCommand(new SerializationCommand());
             if (boss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
+                vscode.window.showErrorMessage(ERROR_MESSAGE);
+                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(boss.error));
+                GmItem.ITEM_PROVIDER?.outputChannel.show();
             } else {
                 const uri = vscode.Uri.file(
                     path.join(
