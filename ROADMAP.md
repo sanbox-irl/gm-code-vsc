@@ -11,9 +11,9 @@
 - [x] Nicer icons
 - [x] Shader support
 - [x] All event support
-- [ ] Add an excellent changelog
-- [ ] Object creation bug + events bug
+- [x] Add an excellent changelog
 - [ ] add a not excellent, but good enough, user guide.
+- [ ] fix logging
 
 ## v0.1.0
 
