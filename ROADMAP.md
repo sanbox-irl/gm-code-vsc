@@ -10,7 +10,7 @@
 - [x] add types for all non-script files
 - [x] Nicer icons
 - [x] Shader support
-- [ ] All event support
+- [x] All event support
 - [ ] Add an excellent changelog
 - [ ] Object creation bug + events bug
 - [ ] add a not excellent, but good enough, user guide.
