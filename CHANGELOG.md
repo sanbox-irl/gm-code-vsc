@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.0] - 2020-10-12
 
-This is the initial release of gm-code-vsc.
+Added various new features and bugfixes.
+
+**Breaking change**: this extension now requires Visual Studio Code version 1.50.
+
+Additionally, *adam*, the tool used to compile Gms2 projects, only works on the most recent, stable release
+of Gms2. The Gms2 Beta channel is not currently supported. PRs are welcome!
 
 ### Fixes
 
