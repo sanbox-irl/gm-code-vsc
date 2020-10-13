@@ -19,10 +19,8 @@ For more details, make sure to checkout the [ROADMAP](./ROADMAP.md).
 
 ## Features
 
-![Wow](./images/wow.gif)
-
 - View your Gms2 Asset Tree in Visual Studio Code
-  ![TreeView](./images/treeview.png)
+  ![TreeView](./images/wow.gif)
 
 - Simply click on any code file (script, object event, shader) to open the text file to edit.
 - Add and Delete Scripts, Objects, and Events by simply right clicking in the Asset Browser, just like in Gms2
