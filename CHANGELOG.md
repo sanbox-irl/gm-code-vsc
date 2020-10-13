@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2020-10-13
+
+### Fixes
+
+- Fixed a problem with Tasks on a Bash in Windows.
+
 ## [0.2.0] - 2020-10-12
 
 Added various new features and bugfixes.
