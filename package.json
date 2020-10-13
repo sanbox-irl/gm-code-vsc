@@ -1,6 +1,6 @@
 {
     "name": "gm-code-vsc",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "displayName": "Gm Code",
     "description": "Support for Gms2 projects.",
     "engines": {
