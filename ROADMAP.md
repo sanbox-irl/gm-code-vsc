@@ -1,5 +1,16 @@
 # ROADMAP
 
+## v0.3.0
+
+- [] TextMate grammer for excellent Gms2 colorization
+- [] Intellisense for built in Gms2 functions
+- [] Intellisense for resources within a project
+- [] Function lookups
+
+## v0.2.1
+
+- [x] Fixed error in Tasks when using Git Bash on Windows
+
 ## v0.2.0
 
 - [x] Bugfixes
