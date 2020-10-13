@@ -14,7 +14,9 @@
                 "showReuseMessage": true,
                 "clear": true
             },
-            "problemMatcher": ["$tsc"]
-        }
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
     ]
 }
