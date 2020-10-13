@@ -20,6 +20,7 @@ For more details, make sure to checkout the [ROADMAP](./ROADMAP.md).
 ## Features
 
 - View your Gms2 Asset Tree in Visual Studio Code
+
   ![TreeView](./images/wow.gif)
 
 - Simply click on any code file (script, object event, shader) to open the text file to edit.
