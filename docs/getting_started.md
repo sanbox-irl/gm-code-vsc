@@ -37,3 +37,23 @@ The asset tree isn't kept up to date automatically (this might change in the fut
 Restarting the server can sometimes be a little buggy. We're always working to iron out bugs, so if you run into problems, please submit a bug report!
 
 ## Compiling a Project
+
+The best way to compile a project is to use adam directly within your integrated terminal. For that, see adam's README for a guide on how to install and use it directly [here](https://github.com/NPC-Studio/adam).
+
+If you'd like to use Tasks in VSC, however, which will allow you to compile a game by simply hitting `Control + Shift + B` (by default -- editable), then you can just go to `Terminal > Configure Default Build Task`:
+  ![TreeView](../images/getting_started_6.png)
+
+And then select `adam run`.
+
+Now, you can invoke this task by simply using your default build task with `Control + Shift + B`, or by selecting this in the menu:
+  ![TreeView](../images/getting_started_7.png)
+
+If you want more control over Adam, such as setting configurations, you can make a `.adam.toml` file, with options per [this guide](https://github.com/NPC-Studio/adam/blob/main/docs/CONFIG_FILE_GUIDE.md). However, VSC's task management is not easily flexible enough to allow for `--yyc` to be passed in via a task, so if you want to compile with the YYC, please invoke adam directly.
+
+## What about Colorization, Autocomplete, and Hover Actions? My intellisense!!!
+
+Currently, gm-code-vsc does not have built in colorization or intellisense of any kind. This is on purpose! We're building up slowly to extra complexity.
+
+For now, however, this extension is very serviceable [here](https://marketplace.visualstudio.com/items?itemName=liaronce.gml-support). With update 0.3.0 planned (see our ROADMAP for what's coming up!), Colorization and Autocomplete are planned.
+
+If you have any points of confusion with this guide, please feel free to submit an issue!
