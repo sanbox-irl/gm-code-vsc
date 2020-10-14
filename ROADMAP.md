@@ -2,10 +2,10 @@
 
 ## v0.3.0
 
-- [] TextMate grammer for excellent Gms2 colorization
-- [] Intellisense for built in Gms2 functions
-- [] Intellisense for resources within a project
-- [] Function lookups
+- [ ] TextMate grammer for excellent Gms2 colorization
+- [ ] Intellisense for built in Gms2 functions
+- [ ] Intellisense for resources within a project
+- [ ] Function lookups
 
 ## v0.2.1
 
