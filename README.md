@@ -2,6 +2,8 @@
 
 This is a *highly* alpha Gms2 extension for Visual Studio Code. It provides support to show the Asset Browser in Visual Studio Code.
 
+To download this extension, please [go to the Visual Studio Code marketplace here](https://marketplace.visualstudio.com/items?itemName=sanbox.gm-code-vsc).
+
 **Note: only the most recent STABLE version of Gms2 is supported.**
 
 If you're a *user*, please read the [getting started guide here](./docs/getting_started.md) for an introduction to the various features gm-code-vsc provides.
@@ -15,7 +17,7 @@ This extension is under active development. The current goals for 0.3.0 are:
 - Intellisense for resources within a project
 - Function lookups
 
-For more details, make sure to checkout the [ROADMAP](./ROADMAP.md).
+Our [CHANGELOG is here](./CHANGELOG.md), and for more on the future goals of this project, look [here at our ROADMAP](./ROADMAP.md).
 
 ## Features
 
