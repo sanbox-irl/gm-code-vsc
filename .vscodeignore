@@ -1,2 +1,6 @@
 **/*.ts
 **/tsconfig.json
+docs/*
+image/*
+.vscode/*
+.github/*
