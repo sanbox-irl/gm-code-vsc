@@ -22,7 +22,13 @@ export class AdamTaskProvider implements vscode.TaskProvider {
                 this.workspaceFolder,
                 TaskKind.Run,
                 AdamTaskProvider.TaskType,
-                new vscode.ShellExecution(`'${this.adamPath}' ${TaskKind.Run}`)
+                new vscode.ShellExecution(
+                    {
+                        quoting: vscode.ShellQuoting.Strong,
+                        value: this.adamPath,
+                    },
+                    [TaskKind.Run]
+                )
             );
             run_task.group = vscode.TaskGroup.Build;
             this.tasks.push(run_task);
@@ -35,7 +41,13 @@ export class AdamTaskProvider implements vscode.TaskProvider {
                 this.workspaceFolder,
                 TaskKind.Build,
                 AdamTaskProvider.TaskType,
-                new vscode.ShellExecution(`'${this.adamPath}' ${TaskKind.Build}`)
+                new vscode.ShellExecution(
+                    {
+                        quoting: vscode.ShellQuoting.Strong,
+                        value: this.adamPath,
+                    },
+                    [TaskKind.Build]
+                )
             );
             run_task.group = vscode.TaskGroup.Build;
             this.tasks.push(build_task);
@@ -48,7 +60,13 @@ export class AdamTaskProvider implements vscode.TaskProvider {
                 this.workspaceFolder,
                 TaskKind.Clean,
                 AdamTaskProvider.TaskType,
-                new vscode.ShellExecution(`'${this.adamPath}' ${TaskKind.Clean}`)
+                new vscode.ShellExecution(
+                    {
+                        quoting: vscode.ShellQuoting.Strong,
+                        value: this.adamPath,
+                    },
+                    [TaskKind.Clean]
+                )
             );
             run_task.group = vscode.TaskGroup.Clean;
             this.tasks.push(clean_task);
@@ -60,7 +78,14 @@ export class AdamTaskProvider implements vscode.TaskProvider {
         const task = _task.definition as AdamTaskDefinition | undefined;
 
         if (task) {
-            _task.execution = new vscode.ShellExecution(`'${this.adamPath}' ${task.task}`);
+            _task.execution = new vscode.ShellExecution(
+                {
+                    quoting: vscode.ShellQuoting.Strong,
+                    value: this.adamPath,
+                },
+                [task.task]
+            );
+
             return _task;
         }
         return undefined;
