@@ -7,6 +7,55 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Command, ProjectMetadata } from 'yy-boss-ts/out/core';
 import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
+import { Initialization } from './extension';
+import { ClosureStatus } from 'yy-boss-ts/out/yy_boss';
+
+export function registerVfs(init: Initialization) {
+    const context = init.context;
+    const outputChannel = init.outputChannel;
+
+    const item_provider = new GmItemProvider(
+        init.yyBoss,
+        init.workspaceFolder.uri.fsPath,
+        init.outputChannel
+    );
+    GmItem.ITEM_PROVIDER = item_provider;
+    GmItem.PROJECT_METADATA = init.projectMetadata;
+
+    context.subscriptions.push(
+        vscode.window.createTreeView('gmVfs', {
+            treeDataProvider: item_provider,
+            showCollapseAll: true,
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
+            outputChannel.appendLine('reloading workspace');
+            if (
+                item_provider.yyBoss !== undefined &&
+                item_provider.yyBoss.closureStatus === ClosureStatus.Open
+            ) {
+                await item_provider.yyBoss.shutdown();
+            }
+
+            let output = await preboot();
+            if (output === undefined) {
+                vscode.window.showErrorMessage(`Error: Could not reload gm-code-server`);
+            } else {
+                let [_, _adam, yyBoss, projectMetadata] = output;
+
+                outputChannel.appendLine('reloaded workspace');
+
+                vfs.GmItem.PROJECT_METADATA = projectMetadata;
+                item_provider.yyBoss = yyBoss;
+                YY_BOSS = yyBoss;
+
+                item_provider.refresh(undefined);
+            }
+        })
+    );
+}
 
 const ERROR_MESSAGE = `YyBoss has encountered a serious error. You should restart the server, and report an error on the Github page at https://github.com/sanbox-irl/gm-code-vsc/issues/new`;
 
@@ -26,9 +75,7 @@ export class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
             switch (parent.gmItemType) {
                 case GmItemType.Folder:
                     let folderElement = parent as FolderItem;
-                    let result = await this.writeCommand(
-                        new vfsCommand.GetFolderVfs(folderElement.viewPath)
-                    );
+                    let result = await this.writeCommand(new vfsCommand.GetFolderVfs(folderElement.viewPath));
 
                     return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
                 case GmItemType.Resource:
