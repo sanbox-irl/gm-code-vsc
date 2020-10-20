@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { ClosureStatus, LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
-import { Resource } from 'yy-boss-ts';
 import { ProjectMetadata } from 'yy-boss-ts/out/core';
 import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
-import { AdamTaskProvider } from './tasks';
+import * as tasks from './tasks';
+import * as lsp from './lsp';
 import { Fetch } from 'yy-boss-ts/out/fetch';
 
 let YY_BOSS: YyBoss | undefined = undefined;
@@ -130,100 +130,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
     let [workspaceFolder, adam, yyBoss, projectMetadata] = output;
 
-    //#region  Vfs
-    const item_provider = new vfs.GmItemProvider(yyBoss, workspaceFolder.uri.fsPath, outputChannel);
-    vfs.GmItem.ITEM_PROVIDER = item_provider;
-    vfs.GmItem.PROJECT_METADATA = projectMetadata;
-    YY_BOSS = yyBoss;
+    const initializer: Initialization = {
+        context: context,
+        projectMetadata: projectMetadata,
+        workspaceFolder: workspaceFolder,
+        yyBoss: yyBoss,
+        outputChannel: outputChannel,
+        adamExePath: adam,
 
-    context.subscriptions.push(
-        vscode.window.createTreeView('gmVfs', {
-            treeDataProvider: item_provider,
-            showCollapseAll: true,
-        })
-    );
+        request_reboot: async () => {
+            throw 'not yet implemented';
+            await preboot();
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
-            outputChannel.appendLine('reloading workspace');
-            if (YY_BOSS !== undefined && YY_BOSS.closureStatus === ClosureStatus.Open) {
-                // do not await this
-                YY_BOSS.shutdown();
-            }
+            return true;
+        },
+    };
 
-            let output = await preboot();
-            if (output === undefined) {
-                vscode.window.showErrorMessage(`Error: Could not reload gm-code-server`);
-            } else {
-                let [_, _adam, yyBoss, projectMetadata] = output;
-
-                outputChannel.appendLine('reloaded workspace');
-
-                vfs.GmItem.PROJECT_METADATA = projectMetadata;
-                item_provider.yyBoss = yyBoss;
-                YY_BOSS = yyBoss;
-
-                item_provider.refresh(undefined);
-            }
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.open', async (uri: vscode.Uri) => {
-            let new_item = await vscode.workspace.openTextDocument(uri);
-            vscode.window.showTextDocument(new_item);
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.createScript', (parent: vfs.FolderItem) => {
-            vfs.ResourceItem.onCreateResource(parent, Resource.Script);
-        })
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.createFolder', vfs.FolderItem.onCreateFolder)
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.renameFolder', vfs.FolderItem.OnRenameFolder)
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.deleteFolder', vfs.FolderItem.onDeleteFolder)
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.createObject', (parent: vfs.FolderItem) => {
-            vfs.ResourceItem.onCreateResource(parent, Resource.Object);
-        })
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.deleteResource', vfs.ResourceItem.onDeleteResource)
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.renameResource', vfs.ResourceItem.onRenameResource)
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('gmVfs.deleteEvent', vfs.EventItem.onDeleteEvent)
-    );
-
-    // register all our event stuff -- this is a hack until October 2020 when we have submenus
-    // when we will explore DIFFERENT hacks
-    for (const value of Object.values(vfs.GmEvent)) {
-        const cmd_name = `gmVfs.add${value}`;
-        context.subscriptions.push(
-            vscode.commands.registerCommand(cmd_name, (parent: vfs.ObjectItem) => {
-                vfs.ObjectItem.onCreateEvent(parent, value);
-            })
-        );
-    }
-    //#endregion
-    //#region Task Providers
-    const taskProvider = vscode.tasks.registerTaskProvider(
-        AdamTaskProvider.TaskType,
-        new AdamTaskProvider(workspaceFolder, adam)
-    );
-    context.subscriptions.push(taskProvider);
-
-    //#endregion
+    lsp.activate(initializer);
+    vfs.register(initializer);
+    tasks.register(initializer);
 }
 
 export async function deactivate() {
@@ -232,4 +157,16 @@ export async function deactivate() {
     }
 
     YY_BOSS.shutdown();
+    lsp.deactivate();
+}
+
+export interface Initialization {
+    context: vscode.ExtensionContext;
+    workspaceFolder: vscode.WorkspaceFolder;
+    projectMetadata: ProjectMetadata;
+    yyBoss: YyBoss;
+    adamExePath: string;
+    outputChannel: vscode.OutputChannel;
+
+    request_reboot: () => Promise<boolean>;
 }

@@ -1,7 +1,16 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { Initialization } from './extension';
 
-export class AdamTaskProvider implements vscode.TaskProvider {
+export function register(init: Initialization) {
+    const taskProvider = vscode.tasks.registerTaskProvider(
+        AdamTaskProvider.TaskType,
+        new AdamTaskProvider(init.workspaceFolder, init.adamExePath)
+    );
+    init.context.subscriptions.push(taskProvider);
+}
+
+class AdamTaskProvider implements vscode.TaskProvider {
     static TaskType = 'adam';
     private tasks: vscode.Task[] | undefined = undefined;
     private adamPath: string;
