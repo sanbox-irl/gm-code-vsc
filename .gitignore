@@ -18,3 +18,5 @@ out/**/*
 
 # a lil bit of scaffolding to get us started here..
 src/config.ts
+
+.vscode/
