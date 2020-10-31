@@ -1,4 +1,5 @@
-import { LanguageClient, LanguageClientOptions } from 'vscode-languageclient';
+import { commands } from 'vscode';
+import { LanguageClient, LanguageClientOptions, RequestType, RequestType0 } from 'vscode-languageclient';
 import { LSP_PATH } from './config';
 import { Initialization } from './extension';
 
@@ -10,6 +11,7 @@ export function activate(init: Initialization) {
         // Register the server for gms2 documents
         documentSelector: [{ scheme: 'file', language: 'gml-gms2' }],
         outputChannel: init.outputChannel,
+        traceOutputChannel: init.outputChannel,
     };
 
     // Create the language client and start the client.
@@ -24,4 +26,8 @@ export function deactivate(): Thenable<void> | undefined {
         return undefined;
     }
     return client.stop();
+}
+
+const enum YyBossCommand {
+    HelloWorld = 'HelloWorld',
 }
