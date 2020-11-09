@@ -1,27 +1,26 @@
-import { YyBoss, vfsCommand, resourceCommand, Resource, util } from 'yy-boss-ts';
+import { vfsCommand, resourceCommand, Resource, util } from 'yy-boss-ts';
 import { FilesystemPath, SerializedDataDefault, SerializedDataFilepath, ViewPath } from 'yy-boss-ts';
 import * as vscode from 'vscode';
-import { YypBossError } from 'yy-boss-ts/out/error';
+import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Command, ProjectMetadata } from 'yy-boss-ts/out/core';
 import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
 import { Initialization } from './extension';
-import { ClosureStatus } from 'yy-boss-ts/out/yy_boss';
 import { ev_to_fname, fname_to_ev, GmEvent } from 'yy-boss-ts/out/events';
+import { Server } from './lsp';
 
-export function register(init: Initialization) {
+let gmItemProvider: GmItemProvider;
+// let projectMetaData: ProjectMetadata;
+
+export function register(init: Initialization, server: Server) {
     const context = init.context;
     const outputChannel = init.outputChannel;
 
-    const item_provider = new GmItemProvider(
-        init.yyBoss,
-        init.workspaceFolder.uri.fsPath,
-        init.outputChannel
-    );
-    GmItem.ITEM_PROVIDER = item_provider;
-    GmItem.PROJECT_METADATA = init.projectMetadata;
+    const item_provider = new GmItemProvider(init.workspaceFolder.uri.fsPath, init.outputChannel, server);
+    gmItemProvider = item_provider;
+    // projectMetaData = init.projectMetadata;
 
     context.subscriptions.push(
         vscode.window.createTreeView('gmVfs', {
@@ -70,16 +69,10 @@ export function register(init: Initialization) {
             })
         );
     }
+
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
             outputChannel.appendLine('reloading workspace');
-            if (
-                item_provider.yyBoss !== undefined &&
-                item_provider.yyBoss.closureStatus === ClosureStatus.Open
-            ) {
-                await item_provider.yyBoss.shutdown();
-            }
-
             let output = await init.request_reboot();
             if (output) {
                 throw 'Not implemented yet!';
@@ -96,21 +89,25 @@ const ERROR_MESSAGE = `YyBoss has encountered a serious error. You should restar
 
 class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     constructor(
-        public yyBoss: YyBoss,
         public working_directory: string,
-        public outputChannel: vscode.OutputChannel
+        public outputChannel: vscode.OutputChannel,
+        public server: Server
     ) {}
 
     async getChildren(parent?: GmItem | undefined): Promise<GmItem[]> {
         if (parent === undefined) {
-            let result = await this.writeCommand(new vfsCommand.GetFullVfs());
+            let result = (await this.writeCommand(
+                new vfsCommand.GetFullVfs()
+            )) as vfsCommand.outputs.FolderGraphOutput;
 
             return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
         } else {
             switch (parent.gmItemType) {
                 case GmItemType.Folder:
                     let folderElement = parent as FolderItem;
-                    let result = await this.writeCommand(new vfsCommand.GetFolderVfs(folderElement.viewPath));
+                    let result = (await this.writeCommand(
+                        new vfsCommand.GetFolderVfs(folderElement.viewPath)
+                    )) as vfsCommand.outputs.FolderGraphOutput;
 
                     return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
                 case GmItemType.Resource:
@@ -119,52 +116,52 @@ class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                         case Resource.Object: {
                             let object = resourceElement as ObjectItem;
 
-                            let data = await this.writeCommand(
+                            let data = (await this.writeCommand(
                                 new resourceCommand.GetAssociatedDataResource(
                                     Resource.Object,
                                     parent.label,
                                     true
                                 )
-                            );
+                            )) as resourceCommand.outputs.ResourceAssociatedDataOutput;
 
-                            if (this.yyBoss.hasError() === false) {
-                                let fpath = data.associatedData as SerializedDataFilepath;
-                                let events = fs.readFileSync(fpath.data);
-                                let assoc_data = JSON.parse(events.toString());
-                                fs.unlinkSync(fpath.data);
+                            // if (this.yyBoss.hasError() === false) {
+                            let fpath = data.associatedData as SerializedDataFilepath;
+                            let events = fs.readFileSync(fpath.data);
+                            let assoc_data = JSON.parse(events.toString());
+                            fs.unlinkSync(fpath.data);
 
-                                let fileNames = Object.getOwnPropertyNames(assoc_data);
-                                let betterNames = await this.writeCommand(
-                                    new util.PrettyEventNames(fileNames)
-                                );
+                            let fileNames = Object.getOwnPropertyNames(assoc_data);
+                            let betterNames = (await this.writeCommand(
+                                new util.PrettyEventNames(fileNames)
+                            )) as util.outputs.PrettyEventOutput;
 
-                                // update capas
-                                const capabilities = Object.values(GmEvent);
-                                let output: GmItem[] = [];
+                            // update capas
+                            const capabilities = Object.values(GmEvent);
+                            let output: GmItem[] = [];
 
-                                for (const [fName, prettyName] of betterNames.eventNames) {
-                                    let name = prettyName;
+                            for (const [fName, prettyName] of betterNames.eventNames) {
+                                let name = prettyName;
 
-                                    output.push(new EventItem(name, object, fName, object));
+                                output.push(new EventItem(name, object, fName, object));
 
-                                    const parse = fname_to_ev(fName);
-                                    if (parse !== undefined) {
-                                        const idx = capabilities.indexOf(parse);
-                                        if (idx !== -1) {
-                                            capabilities.splice(idx, 1);
-                                        }
+                                const parse = fname_to_ev(fName);
+                                if (parse !== undefined) {
+                                    const idx = capabilities.indexOf(parse);
+                                    if (idx !== -1) {
+                                        capabilities.splice(idx, 1);
                                     }
                                 }
-
-                                object.updateContextValue(capabilities);
-
-                                return output;
-                            } else {
-                                this.outputChannel.appendLine(
-                                    JSON.stringify(this.yyBoss.error, undefined, 4)
-                                );
-                                return [];
                             }
+
+                            object.updateContextValue(capabilities);
+
+                            return output;
+                            // } else {
+                            //     this.outputChannel.appendLine(
+                            //         JSON.stringify(this.yyBoss.error, undefined, 4)
+                            //     );
+                            //     return [];
+                            // }
                         }
 
                         case Resource.Shader: {
@@ -219,7 +216,7 @@ class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
             switch (newFile.resourceDescriptor.resource) {
                 case Resource.Object:
                     const fileNames = await ObjectItem.getEventCapabilities(
-                        this.yyBoss,
+                        this,
                         newFile.filesystemPath.name
                     );
 
@@ -250,9 +247,9 @@ class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         return output;
     }
 
-    public writeCommand<T extends Command>(command: T): Promise<CommandToOutput<T>> {
+    public writeCommand<T extends Command>(command: T): Promise<CommandToOutput<T> | CommandOutputError> {
         this.outputChannel.appendLine(JSON.stringify(command));
-        return this.yyBoss.writeCommand(command);
+        return this.server.client.sendRequest('textDocument/yyBoss', command);
     }
 }
 
@@ -275,9 +272,6 @@ abstract class GmItem extends vscode.TreeItem {
     abstract id: string;
     command: vscode.Command | undefined = undefined;
     abstract iconPath: vscode.ThemeIcon;
-
-    public static ITEM_PROVIDER: GmItemProvider | undefined;
-    public static PROJECT_METADATA: ProjectMetadata | undefined;
 }
 
 class FolderItem extends GmItem {
@@ -303,24 +297,23 @@ class FolderItem extends GmItem {
     iconPath = new vscode.ThemeIcon('folder');
 
     public static async onCreateFolder(folder: FolderItem | undefined) {
-        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+        let server = gmItemProvider;
 
         const originalName = await vscode.window.showInputBox({
             value: folder?.label ?? 'New Folder',
             prompt: 'New Folder Name',
             async validateInput(str: string): Promise<string | undefined> {
-                let newFolder = await yyBoss.writeCommand(
+                let newFolder = await server.writeCommand(
                     new vfsCommand.CreateFolderVfs(folder?.viewPath ?? 'folders', str)
                 );
 
-                if (yyBoss.error === undefined) {
-                    await yyBoss.writeCommand(
-                        new vfsCommand.RemoveFolderVfs(newFolder.createdFolder.path, false)
-                    );
-
+                if (newFolder.success) {
+                    let nf = newFolder as vfsCommand.outputs.CreatedFolderOutput;
+                    await server.writeCommand(new vfsCommand.RemoveFolderVfs(nf.createdFolder.path, false));
                     return undefined;
                 } else {
-                    return `Error:${YypBossError.error(yyBoss.error)}`;
+                    let nf = newFolder as CommandOutputError;
+                    return `Error:${YypBossError.error(nf.error)}`;
                 }
             },
         });
@@ -333,9 +326,11 @@ class FolderItem extends GmItem {
         let i = 0;
         let success = false;
         while (true) {
-            await yyBoss.writeCommand(new vfsCommand.CreateFolderVfs(folder?.viewPath ?? 'folders', name));
+            let output = await server.writeCommand(
+                new vfsCommand.CreateFolderVfs(folder?.viewPath ?? 'folders', name)
+            );
 
-            if (yyBoss.error === undefined) {
+            if (output.success) {
                 success = true;
                 break;
             } else {
@@ -349,9 +344,9 @@ class FolderItem extends GmItem {
         }
 
         if (success) {
-            await yyBoss.writeCommand(new SerializationCommand());
-            if (yyBoss.error === undefined) {
-                GmItem.ITEM_PROVIDER?.refresh(folder);
+            let output = await server.writeCommand(new SerializationCommand());
+            if (output.success) {
+                gmItemProvider.refresh(folder);
             }
         }
     }
@@ -363,30 +358,16 @@ class FolderItem extends GmItem {
         });
 
         if (new_folder_name !== undefined) {
-            const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-            await yyBoss.writeCommand(new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name));
-
-            if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(ERROR_MESSAGE);
-                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-                GmItem.ITEM_PROVIDER?.outputChannel.show();
-            } else {
-                await yyBoss.writeCommand(new SerializationCommand());
-
-                if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(ERROR_MESSAGE);
-                    GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-                    GmItem.ITEM_PROVIDER?.outputChannel.show();
-                } else {
-                    GmItem.ITEM_PROVIDER?.refresh(folder.parent);
+            perform_op_serialize_then(
+                new vfsCommand.RenameFolderVfs(folder.viewPath, new_folder_name),
+                async _ => {
+                    gmItemProvider.refresh(folder.parent);
                 }
-            }
+            );
         }
     }
 
     public static async onDeleteFolder(folder: FolderItem) {
-        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-
         let output = await vscode.window.showWarningMessage(
             `Are you sure you want to delete ${folder.label}? Restoring folders can be difficult by hand.`,
             { modal: true },
@@ -394,14 +375,9 @@ class FolderItem extends GmItem {
         );
 
         if (output === 'Delete') {
-            await yyBoss.writeCommand(new vfsCommand.RemoveFolderVfs(folder.viewPath, true));
-
-            if (yyBoss.error === undefined) {
-                await yyBoss.writeCommand(new SerializationCommand());
-                if (yyBoss.error === undefined) {
-                    GmItem.ITEM_PROVIDER?.refresh(folder.parent);
-                }
-            }
+            perform_op_serialize_then(new vfsCommand.RemoveFolderVfs(folder.viewPath, true), async _ => {
+                gmItemProvider.refresh(folder.parent);
+            });
         }
     }
 }
@@ -422,13 +398,13 @@ abstract class ResourceItem extends GmItem {
     }
 
     public static async onRenameResource(resourceItem: ResourceItem) {
-        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-
         const new_resource_name = await vscode.window.showInputBox({
             value: resourceItem.filesystemPath.name,
             prompt: `Rename ${resourceItem.resource}`,
             async validateInput(input: string): Promise<string | undefined> {
-                let response = await yyBoss.writeCommand(new util.CanUseResourceName(input));
+                let response = (await gmItemProvider.writeCommand(
+                    new util.CanUseResourceName(input)
+                )) as util.outputs.NameIsValidOutput;
 
                 if (response.nameIsValid) {
                     return undefined;
@@ -439,36 +415,20 @@ abstract class ResourceItem extends GmItem {
         });
 
         if (new_resource_name !== undefined && new_resource_name.length > 0) {
-            const yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-            await yyBoss.writeCommand(
+            perform_op_serialize_then(
                 new resourceCommand.RenameResource(
                     resourceItem.resource,
                     resourceItem.filesystemPath.name,
                     new_resource_name
-                )
-            );
-
-            if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(ERROR_MESSAGE);
-                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-                GmItem.ITEM_PROVIDER?.outputChannel.show();
-            } else {
-                await yyBoss.writeCommand(new SerializationCommand());
-
-                if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(ERROR_MESSAGE);
-                    GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-                    GmItem.ITEM_PROVIDER?.outputChannel.show();
-                } else {
-                    GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
+                ),
+                async _ => {
+                    gmItemProvider.refresh(resourceItem.parent);
                 }
-            }
+            );
         }
     }
 
     public static async onDeleteResource(resourceItem: ResourceItem) {
-        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-
         let output = await vscode.window.showWarningMessage(
             `Are you sure you want to delete ${resourceItem.label}? Restoring resources can be difficult by hand.`,
             { modal: true },
@@ -476,36 +436,25 @@ abstract class ResourceItem extends GmItem {
         );
 
         if (output === 'Delete') {
-            await yyBoss.writeCommand(
-                new resourceCommand.RemoveResource(resourceItem.resource, resourceItem.filesystemPath.name)
-            );
-
-            if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(ERROR_MESSAGE);
-                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-                GmItem.ITEM_PROVIDER?.outputChannel.show();
-            } else {
-                await yyBoss.writeCommand(new SerializationCommand());
-
-                if (yyBoss.hasError()) {
-                    vscode.window.showErrorMessage(ERROR_MESSAGE);
-                    GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-                    GmItem.ITEM_PROVIDER?.outputChannel.show();
-                } else {
-                    GmItem.ITEM_PROVIDER?.refresh(resourceItem.parent);
+            perform_op_serialize_then(
+                new resourceCommand.RemoveResource(resourceItem.resource, resourceItem.filesystemPath.name),
+                async _ => {
+                    gmItemProvider.refresh(resourceItem.parent);
                 }
-            }
+            );
         }
     }
 
     public static async onCreateResource(parent: FolderItem | undefined, resource: Resource) {
-        let yyBoss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+        let yyBoss = gmItemProvider;
 
         const new_resource_name = await vscode.window.showInputBox({
             value: `${resource}`,
             prompt: `Create a new ${resource}`,
             async validateInput(input: string): Promise<string | undefined> {
-                let response = await yyBoss.writeCommand(new util.CanUseResourceName(input));
+                let response = (await yyBoss.writeCommand(
+                    new util.CanUseResourceName(input)
+                )) as util.outputs.NameIsValidOutput;
 
                 if (response.nameIsValid) {
                     return undefined;
@@ -522,7 +471,10 @@ abstract class ResourceItem extends GmItem {
         let view_path: ViewPath;
 
         if (parent === undefined) {
-            view_path = GmItem.PROJECT_METADATA?.rootFile as ViewPath;
+            // ahhh, beautiful code
+            view_path = ((await gmItemProvider.writeCommand(
+                new util.ProjectInfo()
+            )) as util.outputs.ProjectMetadataOutput).projectMetadata.rootFile;
         } else {
             view_path = {
                 name: parent.label,
@@ -530,35 +482,24 @@ abstract class ResourceItem extends GmItem {
             };
         }
 
-        let new_resource = await yyBoss.writeCommand(
+        let new_resource = (await yyBoss.writeCommand(
             new util.CreateResourceYyFile(resource, new_resource_name, view_path)
-        );
+        )) as resourceCommand.outputs.ResourceDataOutput;
 
-        await yyBoss.writeCommand(
-            new resourceCommand.AddResource(resource, new_resource.resource, new SerializedDataDefault())
-        );
-
-        if (yyBoss.hasError()) {
-            vscode.window.showErrorMessage(ERROR_MESSAGE);
-            GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-            GmItem.ITEM_PROVIDER?.outputChannel.show();
-        } else {
-            await yyBoss.writeCommand(new SerializationCommand());
-
-            if (yyBoss.hasError()) {
-                vscode.window.showErrorMessage(ERROR_MESSAGE);
-                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(yyBoss.error));
-                GmItem.ITEM_PROVIDER?.outputChannel.show();
-            } else {
-                GmItem.ITEM_PROVIDER?.refresh(parent);
+        await perform_op_serialize_then(
+            new resourceCommand.AddResource(resource, new_resource.resource, new SerializedDataDefault()),
+            async () => {
+                gmItemProvider.refresh(parent);
 
                 // we immediately reveal a script...
                 if (resource === Resource.Script) {
-                    let path = await yyBoss.writeCommand(new util.ScriptGmlPath(new_resource_name));
+                    let path = (await yyBoss.writeCommand(
+                        new util.ScriptGmlPath(new_resource_name)
+                    )) as util.outputs.RequestedPathOutput;
                     vscode.commands.executeCommand('gmVfs.open', [vscode.Uri.file(path.requestedPath)]);
                 }
             }
-        }
+        );
     }
 }
 
@@ -570,7 +511,7 @@ class ScriptItem extends ResourceItem {
 
         const p = vscode.Uri.file(
             path.join(
-                GmItem.ITEM_PROVIDER?.working_directory as string,
+                gmItemProvider.working_directory,
                 path.dirname(filesystemPath.path),
                 filesystemPath.name + '.gml'
             )
@@ -610,39 +551,29 @@ class ObjectItem extends ResourceItem {
     iconPath = new vscode.ThemeIcon('symbol-constructor');
 
     public static async onCreateEvent(objectItem: ObjectItem, eventType: GmEvent) {
-        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
+        const boss = gmItemProvider;
 
-        await boss.writeCommand(new util.CreateEvent(objectItem.filesystemPath.name, ev_to_fname(eventType)));
-
-        if (boss.hasError()) {
-            vscode.window.showErrorMessage(ERROR_MESSAGE);
-            GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(boss.error));
-            GmItem.ITEM_PROVIDER?.outputChannel.show();
-        } else {
-            await boss.writeCommand(new SerializationCommand());
-            if (boss.hasError()) {
-                vscode.window.showErrorMessage(ERROR_MESSAGE);
-                GmItem.ITEM_PROVIDER?.outputChannel.appendLine(YypBossError.error(boss.error));
-                GmItem.ITEM_PROVIDER?.outputChannel.show();
-            } else {
+        await perform_op_serialize_then(
+            new util.CreateEvent(objectItem.filesystemPath.name, ev_to_fname(eventType)),
+            async _ => {
                 const uri = vscode.Uri.file(
                     path.join(
-                        GmItem.ITEM_PROVIDER?.working_directory as string,
+                        gmItemProvider.working_directory,
                         path.dirname(objectItem.filesystemPath.path),
                         ev_to_fname(eventType) + '.gml'
                     )
                 );
 
                 vscode.commands.executeCommand('gmVfs.open', [uri]);
-                GmItem.ITEM_PROVIDER?.refresh(objectItem.parent);
+                gmItemProvider.refresh(objectItem.parent);
             }
-        }
+        );
     }
 
-    static async getEventCapabilities(yyBoss: YyBoss, objectName: string): Promise<GmEvent[]> {
-        let data = await yyBoss.writeCommand(
+    static async getEventCapabilities(server: GmItemProvider, objectName: string): Promise<GmEvent[]> {
+        let data = (await server.writeCommand(
             new resourceCommand.GetAssociatedDataResource(Resource.Object, objectName, true)
-        );
+        )) as resourceCommand.outputs.ResourceAssociatedDataOutput;
 
         let fpath = data.associatedData as SerializedDataFilepath;
         let events = fs.readFileSync(fpath.data);
@@ -742,7 +673,7 @@ class ShaderFileItem extends GmItem {
 
         this.resourceUri = vscode.Uri.file(
             path.join(
-                GmItem.ITEM_PROVIDER?.working_directory as string,
+                gmItemProvider.working_directory,
                 par_direct,
                 parent.filesystemPath.name + (shaderKind == ShaderKind.Frag ? '.fsh' : '.vsh')
             )
@@ -782,7 +713,7 @@ class EventItem extends GmItem {
 
         const uri = vscode.Uri.file(
             path.join(
-                GmItem.ITEM_PROVIDER?.working_directory as string,
+                gmItemProvider.working_directory,
                 path.dirname(parent.filesystemPath.path),
                 eventFname + '.gml'
             )
@@ -809,8 +740,6 @@ class EventItem extends GmItem {
     iconPath = new vscode.ThemeIcon('list-selection');
 
     public static async onDeleteEvent(event: EventItem) {
-        const boss = GmItem.ITEM_PROVIDER?.yyBoss as YyBoss;
-
         let output = await vscode.window.showWarningMessage(
             `Are you sure you want to delete ${event.object.filesystemPath.name}'s ${event.eventNamePretty} event? Restoring events can be difficult by hand.`,
             { modal: true },
@@ -818,18 +747,12 @@ class EventItem extends GmItem {
         );
 
         if (output === 'Delete') {
-            await boss.writeCommand(new util.DeleteEvent(event.object.filesystemPath.name, event.eventFname));
-
-            if (boss.hasError()) {
-                vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
-            } else {
-                await boss.writeCommand(new SerializationCommand());
-                if (boss.hasError()) {
-                    vscode.window.showErrorMessage(`Error:${YypBossError.error(boss.error)}`);
-                } else {
-                    GmItem.ITEM_PROVIDER?.refresh(event.object.parent);
+            perform_op_serialize_then(
+                new util.DeleteEvent(event.object.filesystemPath.name, event.eventFname),
+                async _ => {
+                    gmItemProvider.refresh(event.object.parent);
                 }
-            }
+            );
         }
     }
 }
@@ -837,4 +760,30 @@ class EventItem extends GmItem {
 const enum ShaderKind {
     Vertex,
     Frag,
+}
+
+async function perform_op_serialize_then<T extends Command>(
+    input: T,
+    f: (arg: CommandToOutput<T>) => Promise<void> | void
+) {
+    const output = await gmItemProvider.writeCommand(input);
+
+    if (output.success) {
+        let output = await gmItemProvider.writeCommand(new SerializationCommand());
+
+        if (output.success) {
+            await f(output as CommandToOutput<T>);
+        } else {
+            let err = output as CommandOutputError;
+            vscode.window.showErrorMessage(ERROR_MESSAGE);
+            gmItemProvider.outputChannel.appendLine(YypBossError.error(err.error));
+            gmItemProvider.outputChannel.show();
+        }
+    } else {
+        let err = output as CommandOutputError;
+
+        vscode.window.showErrorMessage(ERROR_MESSAGE);
+        gmItemProvider.outputChannel.appendLine(YypBossError.error(err.error));
+        gmItemProvider.outputChannel.show();
+    }
 }

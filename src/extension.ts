@@ -1,17 +1,18 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ClosureStatus, LogToFile, YyBoss } from 'yy-boss-ts/out/yy_boss';
+import { ClosureStatus, LogToFile } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
 import { ProjectMetadata } from 'yy-boss-ts/out/core';
 import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
 import * as tasks from './tasks';
 import * as lsp from './lsp';
 import { Fetch } from 'yy-boss-ts/out/fetch';
+import { LanguageClient } from 'vscode-languageclient';
 
-let YY_BOSS: YyBoss | undefined = undefined;
+let server: lsp.Server;
 
 export async function activate(context: vscode.ExtensionContext) {
-    async function preboot(): Promise<[vscode.WorkspaceFolder, string, YyBoss, ProjectMetadata] | undefined> {
+    async function preboot(): Promise<[vscode.WorkspaceFolder, string] | undefined> {
         const paths = vscode.workspace.workspaceFolders as readonly vscode.WorkspaceFolder[];
         let yyp_path: string | undefined = undefined;
         let f_workspace_folder: vscode.WorkspaceFolder | undefined = undefined;
@@ -84,39 +85,8 @@ export async function activate(context: vscode.ExtensionContext) {
             });
 
             outputChannel.appendLine(`Gm Code server is ${boss_path}`);
-            const [status, yyp_boss] = await YyBoss.create(
-                boss_path,
-                yyp_path,
-                context.globalStoragePath,
-                new LogToFile(log_path)
-            );
 
-            if (status.success) {
-                const yy_boss = yyp_boss as YyBoss;
-                yy_boss.attachUnexpectedShutdownCallback(async () => {
-                    let clicked_submit = await vscode.window.showErrorMessage(
-                        'Well, this is awkward. The backing Gm Code server has crashed. Please check the Output console for the current log, and submit a bug report.',
-                        'Submit a bug report'
-                    );
-
-                    if (clicked_submit == 'Submit a bug report') {
-                        await vscode.commands.executeCommand(
-                            'vscode.open',
-                            vscode.Uri.parse('https://github.com/sanbox-irl/gm-code-vsc/issues')
-                        );
-                    }
-                });
-
-                return [
-                    f_workspace_folder as vscode.WorkspaceFolder,
-                    adam_path,
-                    yy_boss,
-                    (status as StartupOutputSuccess).projectMetadata,
-                ];
-            } else {
-                outputChannel.appendLine(JSON.stringify(status));
-                return undefined;
-            }
+            return [f_workspace_folder as vscode.WorkspaceFolder, adam_path];
         } else {
             return undefined;
         }
@@ -128,13 +98,11 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    let [workspaceFolder, adam, yyBoss, projectMetadata] = output;
+    let [workspaceFolder, adam] = output;
 
     const initializer: Initialization = {
         context: context,
-        projectMetadata: projectMetadata,
         workspaceFolder: workspaceFolder,
-        yyBoss: yyBoss,
         outputChannel: outputChannel,
         adamExePath: adam,
 
@@ -146,25 +114,18 @@ export async function activate(context: vscode.ExtensionContext) {
         },
     };
 
-    lsp.activate(initializer);
-    vfs.register(initializer);
+    server = lsp.activate(initializer);
+    vfs.register(initializer, server);
     tasks.register(initializer);
 }
 
 export async function deactivate() {
-    if (YY_BOSS === undefined || YY_BOSS.closureStatus !== ClosureStatus.Open) {
-        return;
-    }
-
-    YY_BOSS.shutdown();
-    lsp.deactivate();
+    lsp.deactivate(server.client);
 }
 
 export interface Initialization {
     context: vscode.ExtensionContext;
     workspaceFolder: vscode.WorkspaceFolder;
-    projectMetadata: ProjectMetadata;
-    yyBoss: YyBoss;
     adamExePath: string;
     outputChannel: vscode.OutputChannel;
 
