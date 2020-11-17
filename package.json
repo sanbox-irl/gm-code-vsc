@@ -35,10 +35,6 @@
     "contributes": {
         "commands": [
             {
-                "command": "gmVfs.sillyBilly",
-                "title": "Test Thing"
-            },
-            {
                 "command": "gmVfs.reloadWorkspace",
                 "title": "Reload",
                 "icon": "$(refresh)"
