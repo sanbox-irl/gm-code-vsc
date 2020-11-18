@@ -114,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
         },
     };
 
-    server = lsp.activate(initializer);
+    server = await lsp.activate(initializer);
     vfs.register(initializer, server);
     tasks.register(initializer);
 }

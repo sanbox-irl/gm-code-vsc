@@ -7,7 +7,7 @@ import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
 import { LSP_PATH } from './config';
 import { Initialization } from './extension';
 
-export function activate(init: Initialization): Server {
+export async function activate(init: Initialization): Promise<Server> {
     const initialization_options: InitializationOptions = {
         working_directory: init.context.globalStoragePath,
     };
@@ -26,6 +26,8 @@ export function activate(init: Initialization): Server {
 
     // Start the client. This will also launch the server
     client.start();
+
+    await client.onReady();
 
     return new Server(client);
 }
