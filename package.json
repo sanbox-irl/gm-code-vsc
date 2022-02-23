@@ -1153,7 +1153,14 @@
         "configuration": {
             "properties": {
                 "gmCode.overrideServerPath": {
-                    "description": "Override path to the gm-code backend server. Used to develop the extension.",
+                    "description": "Override path to the yy-boss cli.",
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "gmCode.languageServerPath": {
+                    "description": "Override path to the gm-code lsp. Used to develop the extension.",
                     "type": [
                         "null",
                         "string"

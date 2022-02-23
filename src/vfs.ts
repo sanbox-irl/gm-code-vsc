@@ -1,5 +1,5 @@
-import { vfsCommand, resourceCommand, Resource, util } from 'yy-boss-ts';
-import { FilesystemPath, SerializedDataDefault, SerializedDataFilepath, ViewPath } from 'yy-boss-ts';
+import { vfsCommand, resourceCommand, Resource, util } from 'yy-boss-ts/out';
+import { FilesystemPath, SerializedDataDefault, SerializedDataFilepath, ViewPath } from 'yy-boss-ts/out';
 import * as vscode from 'vscode';
 import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
@@ -472,9 +472,11 @@ abstract class ResourceItem extends GmItem {
 
         if (parent === undefined) {
             // ahhh, beautiful code
-            view_path = ((await gmItemProvider.writeCommand(
-                new util.ProjectInfo()
-            )) as util.outputs.ProjectMetadataOutput).projectMetadata.rootFile;
+            view_path = (
+                (await gmItemProvider.writeCommand(
+                    new util.ProjectInfo()
+                )) as util.outputs.ProjectMetadataOutput
+            ).projectMetadata.rootFile;
         } else {
             view_path = {
                 name: parent.label,

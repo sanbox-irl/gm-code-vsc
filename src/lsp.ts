@@ -1,16 +1,21 @@
 import { resolve } from 'dns';
-import { commands } from 'vscode';
+import { commands, workspace } from 'vscode';
 import { LanguageClient, LanguageClientOptions, RequestType, RequestType0 } from 'vscode-languageclient';
 import { Command, CommandOutput } from 'yy-boss-ts/out/core';
 import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
-import { LSP_PATH } from './config';
 import { Initialization } from './extension';
 
 export async function activate(init: Initialization): Promise<Server> {
     const initialization_options: InitializationOptions = {
         working_directory: init.context.globalStoragePath,
     };
+
+    let path: string | undefined = workspace.getConfiguration('gmCode').get('languageServerPath');
+    if (path === undefined) {
+        init.outputChannel.appendLine('Could not find server path!');
+        process.exit();
+    }
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
@@ -22,7 +27,7 @@ export async function activate(init: Initialization): Promise<Server> {
     };
 
     // Create the language client and start the client.
-    const client = new LanguageClient('gm-code', 'Gm Code Server', { command: LSP_PATH }, clientOptions);
+    const client = new LanguageClient('gm-code', 'Gm Code Server', { command: path }, clientOptions);
 
     // Start the client. This will also launch the server
     client.start();
