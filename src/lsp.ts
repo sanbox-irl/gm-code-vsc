@@ -1,6 +1,6 @@
 import { resolve } from 'dns';
 import { commands, workspace } from 'vscode';
-import { LanguageClient, LanguageClientOptions, RequestType, RequestType0 } from 'vscode-languageclient';
+import { LanguageClientOptions, LanguageClient } from 'vscode-languageclient/node';
 import { Command, CommandOutput } from 'yy-boss-ts/out/core';
 import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
@@ -14,7 +14,7 @@ export async function activate(init: Initialization): Promise<Server> {
     let path: string | undefined = workspace.getConfiguration('gmCode').get('languageServerPath');
     if (path === undefined) {
         init.outputChannel.appendLine('Could not find server path!');
-        process.exit();
+        process.exit(1);
     }
 
     // Options to control the language client

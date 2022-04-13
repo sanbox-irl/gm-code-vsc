@@ -1,13 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ClosureStatus, LogToFile } from 'yy-boss-ts/out/yy_boss';
 import * as vfs from './vfs';
-import { ProjectMetadata } from 'yy-boss-ts/out/core';
-import { StartupOutputSuccess } from 'yy-boss-ts/out/startup';
 import * as tasks from './tasks';
 import * as lsp from './lsp';
 import { Fetch } from 'yy-boss-ts/out/fetch';
-import { LanguageClient } from 'vscode-languageclient';
 
 let server: lsp.Server;
 
