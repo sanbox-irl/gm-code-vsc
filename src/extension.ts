@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as vfs from './vfs';
 import * as lsp from './lsp';
+import * as fs from 'fs';
 
 let server: lsp.Server;
 
@@ -32,7 +33,13 @@ export async function activate(context: vscode.ExtensionContext) {
         let log_path = path.join(context.logUri.path, 'log.log');
 
         outputChannel.appendLine(`Logging is ${log_path}`);
-        outputChannel.appendLine(`Working Directory is ${context.globalStorageUri}`);
+        outputChannel.appendLine(`Working Directory is ${context.globalStorageUri.fsPath}`);
+
+        outputChannel.appendLine(`${fs.existsSync(context.globalStorageUri.fsPath)}`);
+
+        if (fs.existsSync(context.globalStorageUri.fsPath) == false) {
+            fs.mkdir(context.globalStorageUri.fsPath, () => {});
+        }
 
         return f_workspace_folder as vscode.WorkspaceFolder;
     }

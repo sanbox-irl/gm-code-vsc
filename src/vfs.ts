@@ -109,9 +109,8 @@ class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
             switch (parent.gmItemType) {
                 case GmItemType.Folder:
                     let folderElement = parent as FolderItem;
-                    let result = (await this.writeCommand(
-                        new vfsCommand.GetFolderVfs(folderElement.viewPath)
-                    )) as vfsCommand.outputs.FolderGraphOutput;
+                    let cmd = await this.writeCommand(new vfsCommand.GetFolderVfs(folderElement.viewPath));
+                    let result = cmd as vfsCommand.outputs.FolderGraphOutput;
 
                     return await this.createChildrenOfFolder(result.flatFolderGraph, parent);
                 case GmItemType.Resource:
@@ -571,7 +570,7 @@ class ObjectItem extends ResourceItem {
 
     static async getEventCapabilities(server: GmItemProvider, objectName: string): Promise<GmEvent[]> {
         let data = (await server.writeCommand(
-            new resourceCommand.GetAssociatedDataResource(Resource.Object, objectName, true)
+            new resourceCommand.GetAssociatedDataResource(Resource.Object, objectName, false)
         )) as resourceCommand.outputs.ResourceAssociatedDataOutput;
 
         let fpath = data.associatedData as SerializedDataFilepath;
