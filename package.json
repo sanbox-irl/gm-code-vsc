@@ -1191,7 +1191,7 @@
         "typescript": "4.6.3"
     },
     "dependencies": {
-        "vscode-languageclient": "7.0",
-        "yy-boss-ts": "file:../yy-boss-ts"
+        "vscode-languageclient": "7.0.0",
+        "yy-boss-ts": "0.2.3"
     }
 }

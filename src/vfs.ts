@@ -1,26 +1,31 @@
-import { vfsCommand, resourceCommand, Resource, util } from 'yy-boss-ts/out';
-import { FilesystemPath, SerializedDataDefault, SerializedDataFilepath, ViewPath } from 'yy-boss-ts/out';
+import {
+    vfsCommand,
+    resourceCommand,
+    Resource,
+    util,
+    FilesystemPath,
+    SerializedDataDefault,
+    SerializedDataFilepath,
+    ViewPath,
+} from 'yy-boss-ts/out';
 import * as vscode from 'vscode';
 import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Command, ProjectMetadata } from 'yy-boss-ts/out/core';
+import { Command } from 'yy-boss-ts/out/core';
 import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
 import { Initialization } from './extension';
 import { ev_to_fname, fname_to_ev, GmEvent } from 'yy-boss-ts/out/events';
 import { Server } from './lsp';
 
 let gmItemProvider: GmItemProvider;
-// let projectMetaData: ProjectMetadata;
 
 export function register(init: Initialization, server: Server) {
     const context = init.context;
-    const outputChannel = init.outputChannel;
 
     const item_provider = new GmItemProvider(init.workspaceFolder.uri.fsPath, init.outputChannel, server);
     gmItemProvider = item_provider;
-    // projectMetaData = init.projectMetadata;
 
     context.subscriptions.push(
         vscode.window.createTreeView('gmVfs', {
@@ -72,7 +77,6 @@ export function register(init: Initialization, server: Server) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
-            outputChannel.appendLine('reloading workspace');
             let output = await init.request_reboot();
             if (output) {
                 throw 'Not implemented yet!';
@@ -156,12 +160,6 @@ class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
                             object.updateContextValue(capabilities);
 
                             return output;
-                            // } else {
-                            //     this.outputChannel.appendLine(
-                            //         JSON.stringify(this.yyBoss.error, undefined, 4)
-                            //     );
-                            //     return [];
-                            // }
                         }
 
                         case Resource.Shader: {
@@ -248,7 +246,6 @@ class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
     }
 
     public writeCommand<T extends Command>(command: T): Promise<CommandToOutput<T> | CommandOutputError> {
-        this.outputChannel.appendLine(JSON.stringify(command));
         return this.server.client.sendRequest('textDocument/yyBoss', command);
     }
 }
