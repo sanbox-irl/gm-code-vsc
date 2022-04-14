@@ -1,6 +1,7 @@
-**/*.ts
-**/tsconfig.json
-docs/*
-image/*
-.vscode/*
-.github/*
+.vscode
+node_modules
+src/
+out/
+docs/
+images/
+tsconfig.json

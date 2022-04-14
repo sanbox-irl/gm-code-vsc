@@ -1,6 +1,6 @@
 {
     "name": "gm-code-vsc",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "displayName": "Gm Code",
     "description": "Support for Gms2 projects.",
     "engines": {
@@ -1178,20 +1178,22 @@
             ]
         }
     },
-    "main": "out/extension.js",
-
+    "main": "dist/main.js",
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "vscode:prepublish": "npm run compile && npm run esbuild-base -- --minify",
         "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./"
+        "watch": "tsc -watch -p ./",
+        "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
+        "esbuild": "npm run compile && npm run esbuild-base -- --sourcemap"
     },
     "devDependencies": {
         "@types/node": "^17.0.0",
         "@types/vscode": "^1.66.0",
+        "esbuild": "^0.14.36",
         "typescript": "4.6.3"
     },
     "dependencies": {
         "vscode-languageclient": "7.0.0",
-        "yy-boss-ts": "0.2.3"
+        "yy-boss-ts": "0.2.4"
     }
 }

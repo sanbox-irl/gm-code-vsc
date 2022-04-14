@@ -7,7 +7,7 @@ import {
     SerializedDataDefault,
     SerializedDataFilepath,
     ViewPath,
-} from 'yy-boss-ts/out';
+} from 'yy-boss-ts';
 import * as vscode from 'vscode';
 import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { SerializationCommand } from 'yy-boss-ts/out/serialization';
