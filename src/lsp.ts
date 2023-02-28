@@ -30,9 +30,7 @@ export async function activate(init: Initialization): Promise<Server> {
     const client = new LanguageClient('gm-code', 'Gm Code Server', { command: path }, clientOptions);
 
     // Start the client. This will also launch the server
-    client.start();
-
-    await client.onReady();
+    await client.start();
 
     return new Server(client);
 }
