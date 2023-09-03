@@ -7,16 +7,17 @@ import {
     SerializedDataDefault,
     SerializedDataFilepath,
     ViewPath,
-} from 'yy-boss-ts';
+    errors,
+} from 'yy-boss-api';
 import * as vscode from 'vscode';
-import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
-import { SerializationCommand } from 'yy-boss-ts/out/serialization';
+import { YypBossError } from 'yy-boss-api/out/error';
+import { SerializationCommand } from 'yy-boss-api/out/serialization';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Command } from 'yy-boss-ts/out/core';
-import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
+import { Command } from 'yy-boss-api/out/core';
+import { CommandToOutput } from 'yy-boss-api/out/input_to_output';
 import { Initialization } from './extension';
-import { ev_to_fname, fname_to_ev, GmEvent } from 'yy-boss-ts/out/events';
+import { ev_to_fname, fname_to_ev, GmEvent } from 'yy-boss-api/out/events';
 import { Server } from './lsp';
 
 let gmItemProvider: GmItemProvider;
@@ -79,8 +80,6 @@ export function register(init: Initialization, server: Server) {
         vscode.commands.registerCommand('gmVfs.reloadWorkspace', async () => {
             let output = await init.request_reboot();
             if (output) {
-                throw 'Not implemented yet!';
-
                 item_provider.refresh(undefined);
             } else {
                 vscode.window.showErrorMessage(`Error: Could not reload gm-code-server`);
@@ -244,7 +243,9 @@ class GmItemProvider implements vscode.TreeDataProvider<GmItem> {
         return output;
     }
 
-    public writeCommand<T extends Command>(command: T): Promise<CommandToOutput<T> | CommandOutputError> {
+    public writeCommand<T extends Command>(
+        command: T
+    ): Promise<CommandToOutput<T> | errors.CommandOutputError> {
         return this.server.client.sendRequest('textDocument/yyBoss', command);
     }
 }
@@ -308,7 +309,7 @@ class FolderItem extends GmItem {
                     await server.writeCommand(new vfsCommand.RemoveFolderVfs(nf.createdFolder.path, false));
                     return undefined;
                 } else {
-                    let nf = newFolder as CommandOutputError;
+                    let nf = newFolder as errors.CommandOutputError;
                     return `Error:${YypBossError.error(nf.error)}`;
                 }
             },
@@ -772,13 +773,13 @@ async function perform_op_serialize_then<T extends Command>(
         if (output.success) {
             await f(output as CommandToOutput<T>);
         } else {
-            let err = output as CommandOutputError;
+            let err = output as errors.CommandOutputError;
             vscode.window.showErrorMessage(ERROR_MESSAGE);
             gmItemProvider.outputChannel.appendLine(YypBossError.error(err.error));
             gmItemProvider.outputChannel.show();
         }
     } else {
-        let err = output as CommandOutputError;
+        let err = output as errors.CommandOutputError;
 
         vscode.window.showErrorMessage(ERROR_MESSAGE);
         gmItemProvider.outputChannel.appendLine(YypBossError.error(err.error));

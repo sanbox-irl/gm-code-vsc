@@ -1,8 +1,8 @@
-import { OutputChannel, commands, workspace } from 'vscode';
+import { OutputChannel, workspace } from 'vscode';
 import { LanguageClientOptions, LanguageClient } from 'vscode-languageclient/node';
-import { Command, CommandOutput } from 'yy-boss-ts/out/core';
-import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
-import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
+import { Command, CommandOutput } from 'yy-boss-api/out/core';
+import { CommandOutputError } from 'yy-boss-api/out/error';
+import { CommandToOutput } from 'yy-boss-api/out/input_to_output';
 
 export async function activate(working_directory: string, outputChannel: OutputChannel): Promise<Server> {
     const initialization_options: InitializationOptions = {

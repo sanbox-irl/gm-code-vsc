@@ -59,14 +59,21 @@ export async function activate(context: vscode.ExtensionContext) {
         outputChannel: outputChannel,
 
         request_reboot: async () => {
-            throw 'not yet implemented';
-            await preboot();
+            let output = await preboot();
+            if (output === undefined) {
+                return false;
+            }
+
+            server = await lsp.activate(workspaceFolder.uri.fsPath, outputChannel);
 
             return true;
         },
     };
 
-    vfs.register(initializer, server);
+    const make_vfs: boolean | undefined = vscode.workspace.getConfiguration('gmCode').get('createVFS');
+    if (make_vfs != undefined && make_vfs) {
+        vfs.register(initializer, server);
+    }
 }
 
 export async function deactivate() {
