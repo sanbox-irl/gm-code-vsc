@@ -1136,20 +1136,6 @@
                 "label": "Step"
             }
         ],
-        "taskDefinitions": [
-            {
-                "properties": {
-                    "task": {
-                        "description": "The adam task to run",
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "task"
-                ],
-                "type": "adam"
-            }
-        ],
         "configuration": {
             "properties": {
                 "gmCode.languageServerPath": {

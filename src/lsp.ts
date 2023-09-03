@@ -1,19 +1,19 @@
 import { resolve } from 'dns';
-import { commands, workspace } from 'vscode';
+import { OutputChannel, commands, workspace } from 'vscode';
 import { LanguageClientOptions, LanguageClient } from 'vscode-languageclient/node';
 import { Command, CommandOutput } from 'yy-boss-ts/out/core';
 import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
 import { Initialization } from './extension';
 
-export async function activate(init: Initialization): Promise<Server> {
+export async function activate(working_directory: string, outputChannel: OutputChannel): Promise<Server> {
     const initialization_options: InitializationOptions = {
         working_directory: init.context.globalStoragePath,
     };
 
     let path: string | undefined = workspace.getConfiguration('gmCode').get('languageServerPath');
     if (path === undefined) {
-        init.outputChannel.appendLine('Could not find server path!');
+        outputChannel.appendLine('Could not find server path!');
         process.exit(1);
     }
 
@@ -21,9 +21,8 @@ export async function activate(init: Initialization): Promise<Server> {
     const clientOptions: LanguageClientOptions = {
         // Register the server for gms2 documents
         documentSelector: [{ scheme: 'file', language: 'gml-gms2' }],
-        outputChannel: init.outputChannel,
-        traceOutputChannel: init.outputChannel,
-        initializationOptions: initialization_options,
+        outputChannel: outputChannel,
+        traceOutputChannel: outputChannel,
     };
 
     // Create the language client and start the client.

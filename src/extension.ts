@@ -51,6 +51,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     let workspaceFolder = output;
+    server = await lsp.activate(workspaceFolder.uri.fsPath, outputChannel);
 
     const initializer: Initialization = {
         context: context,
@@ -65,7 +66,6 @@ export async function activate(context: vscode.ExtensionContext) {
         },
     };
 
-    server = await lsp.activate(initializer);
     vfs.register(initializer, server);
 }
 
