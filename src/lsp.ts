@@ -1,14 +1,12 @@
-import { resolve } from 'dns';
 import { OutputChannel, commands, workspace } from 'vscode';
 import { LanguageClientOptions, LanguageClient } from 'vscode-languageclient/node';
 import { Command, CommandOutput } from 'yy-boss-ts/out/core';
 import { CommandOutputError, YypBossError } from 'yy-boss-ts/out/error';
 import { CommandToOutput } from 'yy-boss-ts/out/input_to_output';
-import { Initialization } from './extension';
 
 export async function activate(working_directory: string, outputChannel: OutputChannel): Promise<Server> {
     const initialization_options: InitializationOptions = {
-        working_directory: init.context.globalStoragePath,
+        working_directory: working_directory,
     };
 
     let path: string | undefined = workspace.getConfiguration('gmCode').get('languageServerPath');
@@ -23,6 +21,7 @@ export async function activate(working_directory: string, outputChannel: OutputC
         documentSelector: [{ scheme: 'file', language: 'gml-gms2' }],
         outputChannel: outputChannel,
         traceOutputChannel: outputChannel,
+        initializationOptions: initialization_options,
     };
 
     // Create the language client and start the client.
